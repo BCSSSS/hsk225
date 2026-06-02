@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>HSK Survival Quiz & Flashcard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+
+        .perspective { perspective: 1200px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface { backface-visibility: hidden; }
+        .flip { transform: rotateY(180deg); }
+
+        @keyframes shake {
+            0%,100%{transform:translateX(0)} 15%{transform:translateX(-10px)}
+            30%{transform:translateX(10px)} 45%{transform:translateX(-8px)}
+            60%{transform:translateX(8px)} 75%{transform:translateX(-4px)} 90%{transform:translateX(4px)}
+        }
+        @keyframes pop-in {
+            0%{transform:scale(0.85);opacity:0} 70%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1}
+        }
+        @keyframes slide-up {
+            0%{transform:translateY(18px);opacity:0} 100%{transform:translateY(0);opacity:1}
+        }
+        @keyframes blink {
+            0%,100%{opacity:1} 50%{opacity:0.35}
+        }
+        @keyframes bar-shrink {
+            from{width:100%} to{width:0%}
+        }
+        @keyframes heart-pop {
+            0%{transform:scale(1)} 40%{transform:scale(1.5)} 100%{transform:scale(1)}
+        }
+        .shake { animation: shake 0.45s ease; }
+        .pop-in { animation: pop-in 0.3s ease forwards; }
+        .slide-up { animation: slide-up 0.35s ease forwards; }
+        .blink { animation: blink 0.75s ease infinite; }
+        .heart-pop { animation: heart-pop 0.4s ease; }
+
+        .timer-bar {
+            animation: bar-shrink linear forwards;
+        }
+
+        .glass {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .card-glow { box-shadow: 0 0 0 1px rgba(99,102,241,0.08), 0 8px 32px rgba(99,102,241,0.10); }
+        .hc-glow { box-shadow: 0 0 0 1px rgba(220,38,38,0.10), 0 8px 32px rgba(220,38,38,0.12); }
+
+        input[type=text] { -webkit-appearance: none; appearance: none; }
+        body { background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 50%, #fdf4ff 100%); min-height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // ══════════════════════════════════════════
+        //   DATA NO. 1–75
+        // ══════════════════════════════════════════
+        const WORDS_1_75 = [
+            ['爱','ài','cinta'],
+            ['八','bā','delapan'],
+            ['爸爸','bà ba','ayah'],
+            ['吧','ba','ajak'],
+            ['白天','bái tiān','siang hari'],
+            ['百','bǎi','seratus'],
+            ['半','bàn','setengah'],
+            ['包子','bāo zi','bakpao'],
+            ['杯子','bēi zi','cangkir'],
+            ['本','běn','sebuah'],
+            ['边','biān','samping'],
+            ['病','bìng','sakit'],
+            ['不','bù','tidak'],
+            ['不客气','bú kè qi','sama sama'],
+            ['不要','bú yào','jangan'],
+            ['菜','cài','sayur'],
+            ['茶','chá','teh'],
+            ['唱','chàng','nyanyi'],
+            ['超市','chāo shì','supermarket'],
+            ['车','chē','mobil'],
+            ['吃','chī','makan'],
+            ['出租车','chū zū chē','taksi'],
+            ['穿','chuān','memakai'],
+            ['打电话','dǎ diàn huà','menelepon'],
+            ['大','dà','besar'],
+            ['大家','dà jiā','semuanya'],
+            ['大学','dà xué','kuliah'],
+            ['大学生','dà xué shēng','mahasiswa'],
+            ['到','dào','sampai'],
+            ['的','de','kepunyaan'],
+            ['第','dì','ke'],
+            ['弟弟','dì di','adik'],
+            ['点','diǎn','titik'],
+            ['店','diàn','toko'],
+            ['电话','diàn huà','telepon / panggilan'],
+            ['电脑','diàn nǎo','komputer'],
+            ['电视','diàn shì','tv'],
+            ['电影','diàn yǐng','film'],
+            ['电影院','diàn yǐng yuàn','bioskop'],
+            ['东西','dōng xi','barang'],
+            ['都','dōu','semua'],
+            ['读','dú','baca'],
+            ['读书','dú shū','membaca buku'],
+            ['对','duì','betul'],
+            ['对不起','duì bu qǐ','maaf'],
+            ['多','duō','banyak'],
+            ['多少','duō shao','berapa'],
+            ['儿子','ér zi','anak laki laki'],
+            ['二','èr','dua'],
+            ['饭','fàn','nasi'],
+            ['饭店','fàn diàn','restoran'],
+            ['房间','fáng jiān','kamar'],
+            ['非常','fēi cháng','sangat'],
+            ['飞机','fēi jī','pesawat'],
+            ['分','fēn','bagi'],
+            ['分钟','fēn zhōng','menit'],
+            ['高兴','gāo xìng','gembira'],
+            ['歌','gē','lagu'],
+            ['哥哥','gē ge','abang'],
+            ['个','gè','sebuah'],
+            ['给','gěi','memberi'],
+            ['公司','gōng sī','perusahaan'],
+            ['工作','gōng zuò','pekerjaan'],
+            ['狗','gǒu','anjing'],
+            ['贵','guì','mahal'],
+            ['国','guó','negara'],
+            ['还','hái','masih'],
+            ['孩子','hái zi','anak anak'],
+            ['汉语','hàn yǔ','bahasa mandarin'],
+            ['汉字','hàn zì','aksara mandarin'],
+            ['好','hǎo','baik bagus'],
+            ['好吃','hǎo chī','enak'],
+            ['好看','hǎo kàn','seru nonton'],
+            ['好听','hǎo tīng','enak didengar'],
+            ['好玩儿','hǎo wánr','seru main'],
+        ];
+
+        // ══════════════════════════════════════════
+        //   DATA NO. 76–150
+        // ══════════════════════════════════════════
+        const WORDS_76_150 = [
+            ['号','hào','nomor, tanggal'],
+            ['喝','hē','minum'],
+            ['和','hé','dan, dengan'],
+            ['很','hěn','sangat'],
+            ['后','hòu','belakang'],
+            ['回','huí','kembali'],
+            ['会','huì','bisa'],
+            ['火车','huǒ chē','kereta api'],
+            ['鸡蛋','jī dàn','telur'],
+            ['几','jǐ','berapa'],
+            ['家','jiā','rumah'],
+            ['家人','jiā rén','kekeluarga'],
+            ['见','jiàn','bertemu'],
+            ['件','jiàn','stel (baju)'],
+            ['饺子','jiǎo zi','pansit'],
+            ['叫','jiào','dipanggil'],
+            ['姐姐','jiě jie','kakak (pr)'],
+            ['今年','jīn nián','tahun ini'],
+            ['今天','jīn tiān','hari ini'],
+            ['九','jiǔ','sembilan'],
+            ['觉得','jué de','merasakan'],
+            ['开','kāi','buka'],
+            ['开车','kāi chē','menyetir mobil'],
+            ['看','kàn','melihat'],
+            ['看病','kàn bìng','mengobati'],
+            ['看见','kàn jiàn','terlihat'],
+            ['可以','kě yǐ','boleh'],
+            ['课','kè','pelajaran'],
+            ['口','kǒu','mulut'],
+            ['块','kuài','sepotong (koin)'],
+            ['来','lái','datang'],
+            ['老师','lǎo shī','guru'],
+            ['了','le','sudah'],
+            ['冷','lěng','dingin'],
+            ['里','lǐ','dalam'],
+            ['两','liǎng','dua (barang)'],
+            ['零','líng','nol'],
+            ['六','liù','enam'],
+            ['妈妈','mā ma','ibu'],
+            ['吗','ma','apakah'],
+            ['买','mǎi','beli'],
+            ['卖','mài','jual'],
+            ['忙','máng','sibuk'],
+            ['猫','māo','kucing'],
+            ['没关系','méi guān xi','tak apa apa'],
+            ['没事','méi shì','tak masalah'],
+            ['没有','méi yǒu','tidak ada'],
+            ['妹妹','mèi mei','adik (pr)'],
+            ['们','men','(beberapa org)'],
+            ['米饭','mǐ fàn','nasi putih'],
+            ['面包','miàn bāo','roti'],
+            ['面条儿','miàn tiáor','mie'],
+            ['明年','míng nián','tahun depan'],
+            ['明天','míng tiān','besok'],
+            ['名字','míng zi','nama'],
+            ['哪','nǎ','mana'],
+            ['哪个','nǎ gè','yang mana'],
+            ['哪里','nǎ lǐ','dimana'],
+            ['哪儿','nǎr','dimana'],
+            ['哪些','nǎ xiē','yang mana (jamak)'],
+            ['那','nà','itu'],
+            ['那边','nà biān','sana'],
+            ['那个','nà gè','yang itu'],
+            ['那里','nà lǐ','disana'],
+            ['那儿','nàr','disana'],
+            ['那些','nà xiē','yang itu (jamak)'],
+            ['男','nán','pria'],
+            ['男朋友','nán péng you','pacar pria'],
+            ['呢','ne','kata bantu'],
+            ['能','néng','bisa'],
+            ['你','nǐ','kamu'],
+            ['你好','nǐ hǎo','halo / apa kabar'],
+            ['你们','nǐ men','kalian'],
+            ['年','nián','tahun'],
+            ['您','nín','anda (sopan)'],
+        ];
+
+        // ══════════════════════════════════════════
+        //   DATA NO. 151–225
+        // ══════════════════════════════════════════
+        const WORDS_151_225 = [
+            ['牛奶','niú nǎi','susu'],
+            ['女','nǚ','perempuan'],
+            ['女儿','nǚ ér','anak pr'],
+            ['女朋友','nǚ péng you ♀','Pacar cowok'],
+            ['女士','nǚ shì','wanita lebih tua'],
+            ['朋友','péng you · s','teman'],
+            ['便宜','pián yí · z','murah'],
+            ['漂亮','piào liang · 4','cantik'],
+            ['苹果','píng guǒ','apel'],
+            ['七','qī','tujuh'],
+            ['起床','qǐ chuáng','bangun (tidur)'],
+            ['千','qiān','seribu'],
+            ['前','qián','dulu'],
+            ['钱','qián','uang'],
+            ['请','qǐng','silahkan'],
+            ['请问','qǐng wèn','menanyakan'],
+            ['去','qù','Pergi, ke'],
+            ['去年','qù nián','Tahun lalu'],
+            ['热','rè','panas'],
+            ['人','rén','orang'],
+            ['认识','rèn shi · 4','kenal'],
+            ['日','rì','hari'],
+            ['三','sān','tiga'],
+            ['商店','shāng diàn','toko'],
+            ['上','shàng','atas'],
+            ['上班','shàng bān','bekerja'],
+            ['上课','shàng kè','masuk kelas'],
+            ['上午','shàng wǔ','pagi- jam 10-11'],
+            ['上学','shàng xué','bersekolah'],
+            ['少','shǎo','kurang'],
+            ['谁','shéi / shuí','siapa'],
+            ['什么','shén me','apa'],
+            ['生病','shēng bìng','sakit'],
+            ['十','shí','sepuluh'],
+            ['时候','shí hou · 4','pada waktu'],
+            ['时间','shí jiān','waktu'],
+            ['事','shì','masalah'],
+            ['是','shì','adalah'],
+            ['手机','shǒu jī','hp'],
+            ['书','shū','buku'],
+            ['书店','shū diàn','Toko buku'],
+            ['水','shuǐ','air'],
+            ['水果','shuǐ guǒ','buah-buahan'],
+            ['睡','shuì','tidur'],
+            ['睡觉','shuì jiào','tidur'],
+            ['说','shuō','bicara'],
+            ['说话','shuō huà','berkata'],
+            ['四','sì','empat'],
+            ['岁','suì','umur,usia'],
+            ['他','tā','dia (lk)'],
+            ['它','tā','dia (benda,hewan)'],
+            ['她','tā','dia (pr)'],
+            ['他们','tā men ~ 2','mereka (lk)'],
+            ['它们','tā men ~ 2','mereka (it)'],
+            ['她们','tā men ~ 2','mereka (pr)'],
+            ['太','tài','terlalu'],
+            ['天','tiān','langit'],
+            ['天气','tiān qì','cuaca'],
+            ['听','tīng','dengar'],
+            ['听见','tīng jiān','terdengar'],
+            ['同学','tóng xué','murid'],
+            ['外','wài','luar'],
+            ['外边','wài biān','samping luar'],
+            ['玩','wán','bermain'],
+            ['晚','wǎn','malam.Telat - smp'],
+            ['晚饭','wǎn fàn','makan malam'],
+            ['晚上','wǎn shang·','malam hari'],
+            ['喂','wèi','hallo..'],
+            ['问','wèn','tanya'],
+            ['问题','wèn tí','pertanyaan.'],
+            ['我','wǒ','saya'],
+            ['我们','wǒ men · 4','kita'],
+            ['五','wǔ','lima'],
+            ['午饭','wǔ fàn','makan siang'],
+            ['喜欢','xǐ huan','suka'],
+        ];
+
+        // Hanya 151–225
+        const WORDS = [...WORDS_151_225];
+
+        // ══════════════════════════════════════════
+        //   DATA NAMA TEMAN (Hanzi → Pinyin + Nama)
+        // ══════════════════════════════════════════
+        const NAMES = [
+            ['蔡順安','Cài shùn ān','BILLY'],
+            ['何珍珍','Hé zhēn zhēn','CRISTALIA YOSABELL'],
+            ['陳安安','Chén ān ān','CRISTIAN'],
+            ['陳水珍','Chén shuǐ zhēn','DEVINA'],
+            ['潘佛土','Pān fó tǔ','DHARMAWAN'],
+            ['賴觀花','Lài guān huā','FALENSIA'],
+            ['劉欣霞','Liú xīn xiá','FEMI SEPTIANI'],
+            ['吳火軍','Wú huǒ jūn','FENKI WIJAYA'],
+            ['陳水蓮','Chén shuǐ lián','GABREL DENDA.A'],
+            ['朱安龍','Zhū ān lóng','GIO ARMANDO ABEL'],
+            ['胡梅蘭','Hú méi lán','HARIANA'],
+            ['歐利倫','Ōu lì lún','LEONARDO DEVIO'],
+            ['唐沅沐','Táng yuǎn mù','MARFEL'],
+            ['黃靜帆','Huáng jìng fān','MICHAEL VAN'],
+            ['李寶蘭','Lǐ bǎo lán','MICHELLE CORNELIA'],
+            ['張木新','Zhāng mù xīn','RIKHY SAPUTRA'],
+            ['林金珠','Lín jīn zhū','ROS DIANA'],
+            ['黃翠山','Huáng cuì shān','SANDY'],
+            ['曾木麗','Zēng mù lì','SHEREEN'],
+            ['曾麗嫦','Zēng lì cháng','VIRA MARCELLA'],
+            ['邱福梅','Qiū fú méi','VIVI VALENSIA'],
+            ['周飛孟','Zhōu fēi mèng','VIVIANS'],
+            ['余觀勇','Yú guān yǒng','WILLIAM'],
+        ];
+
+        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+
+        // ── Konversi â î ô û ê → nada 3 ──
+        const cvtMobile = (t) => t
+            .replace(/â/g,'ǎ').replace(/î/g,'ǐ').replace(/ô/g,'ǒ').replace(/û/g,'ǔ').replace(/ê/g,'ě')
+            .replace(/Â/g,'Ǎ').replace(/Î/g,'Ǐ').replace(/Ô/g,'Ǒ').replace(/Û/g,'Ǔ').replace(/Ê/g,'Ě');
+
+        // ── Normalisasi pinyin TEPAT nada (hanya strip spasi & huruf besar) ──
+        const normPinyin = (t) => cvtMobile(t.trim().toLowerCase().replace(/\s+/g,' '));
+
+        // ── Normalisasi arti (ignore nada, case, spasi) ──
+        const normMeaning = (t) => t.toLowerCase().trim()
+            .replace(/[áǎàā]/g,'a').replace(/[éěèē]/g,'e')
+            .replace(/[íǐìī]/g,'i').replace(/[óǒòō]/g,'o').replace(/[úǔùū]/g,'u');
+
+
+        // ══════════════════════════════════════════
+        //   KOMPONEN UTAMA
+        // ══════════════════════════════════════════
+        function App() {
+            const [mode, setMode] = useState('flashcard');
+            const [session, setSession] = useState(0);
+            return (
+                <div style={{minHeight:'100vh', padding:'16px 12px 48px'}}>
+                    <div style={{maxWidth:480,margin:'0 auto'}}>
+                        {/* ── HEADER ── */}
+                        <div style={{textAlign:'center',marginBottom:24}}>
+                            <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.6)',backdropFilter:'blur(12px)',border:'1px solid rgba(99,102,241,0.15)',borderRadius:999,padding:'6px 18px',marginBottom:12}}>
+                                <span style={{fontSize:18}}>🈶</span>
+                                <span style={{fontSize:12,fontWeight:800,letterSpacing:2,color:'#6366f1',textTransform:'uppercase'}}>HSK Survival</span>
+                            </div>
+                            <h1 style={{fontSize:28,fontWeight:900,color:'#1e1b4b',margin:0,lineHeight:1.1}}>Quiz & Flashcard</h1>
+                            <p style={{fontSize:13,color:'#818cf8',fontWeight:600,margin:'4px 0 0'}}>No. 151 – 225 · Mandarin × Indonesia</p>
+                        </div>
+
+                        {/* ── TAB ── */}
+                        <div style={{display:'flex',gap:6,background:'rgba(255,255,255,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.8)',borderRadius:20,padding:6,marginBottom:20,boxShadow:'0 2px 16px rgba(99,102,241,0.08)'}}>
+                            {[
+                                ['flashcard','🃏','Flashcard','#6366f1'],
+                                ['quiz','📝','Quiz','#059669'],
+                                ['hardcore','💀','Hardcore','#dc2626'],
+                                ['blind','🧠','Blind','#d97706'],
+                                ['names','👥','Nama','#7c3aed'],
+                            ].map(([m, icon, label, color]) => (
+                                <button key={m} onClick={() => setMode(m)} style={{
+                                    flex:1, padding:'10px 2px', border:'none', cursor:'pointer',
+                                    borderRadius:14, fontWeight:800, fontSize:10, transition:'all 0.2s',
+                                    background: mode===m ? color : 'transparent',
+                                    color: mode===m ? '#fff' : '#64748b',
+                                    boxShadow: mode===m ? `0 4px 12px ${color}44` : 'none',
+                                    display:'flex', flexDirection:'column', alignItems:'center', gap:2,
+                                }}>
+                                    <span style={{fontSize:16}}>{icon}</span>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* ── KONTEN ── */}
+                        {mode === 'flashcard' && <Flashcard session={session} setSession={setSession} />}
+                        {mode === 'quiz' && <QuizMode />}
+                        {mode === 'hardcore' && <HardcoreMode />}
+                        {mode === 'blind' && <BlindRecallMode />}
+                        {mode === 'names' && <NamesMode />}
+                    </div>
+                </div>
+            );
+        }
+
+        // ══════════════════════════════════════════
+        //   FLASHCARD
+        // ══════════════════════════════════════════
+        function Flashcard({ session, setSession }) {
+            const [isShuffled, setIsShuffled] = useState(false);
+            const [shuffledList, setShuffledList] = useState([]);
+
+            const getBase = (s) => {
+                const third = Math.ceil(WORDS.length / 3);
+                if (s === 0) return WORDS;
+                if (s === 1) return WORDS.slice(0, third);
+                if (s === 2) return WORDS.slice(third, third * 2);
+                return WORDS.slice(third * 2);
+            };
+
+            const list = isShuffled ? shuffledList : getBase(session);
+            const [idx, setIdx] = useState(0);
+            const [flipped, setFlipped] = useState(false);
+            const [done, setDone] = useState(false);
+
+            useEffect(() => { setIdx(0); setFlipped(false); setDone(false); }, [session, isShuffled]);
+
+            const toggleShuffle = () => {
+                const newShuffled = shuffle([...getBase(session)]);
+                setShuffledList(newShuffled);
+                setIsShuffled(p => !p);
+            };
+
+            const cur = list[idx] || WORDS[0];
+            const progress = ((idx + 1) / list.length) * 100;
+
+            if (done) return (
+                <Card>
+                    <div style={{textAlign:'center',padding:'24px 0'}}>
+                        <div style={{fontSize:56,marginBottom:8}}>🎉</div>
+                        <h2 style={{fontSize:22,fontWeight:900,color:'#1e1b4b',margin:'0 0 4px'}}>Sesi Selesai!</h2>
+                        <p style={{color:'#94a3b8',fontSize:13,marginBottom:24}}>Semua {list.length} kartu sudah ditinjau</p>
+                        <Btn color="#6366f1" onClick={() => { setIdx(0); setFlipped(false); setDone(false); }}>Ulangi Sesi</Btn>
+                    </div>
+                </Card>
+            );
+
+            return (
+                <>
+                {/* Sesi selector + shuffle */}
+                <div style={{marginBottom:12}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                        <p style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:2,textTransform:'uppercase',margin:0}}>Sesi Belajar</p>
+                        <button onClick={toggleShuffle} style={{
+                            display:'flex', alignItems:'center', gap:5,
+                            background: isShuffled ? '#6366f1' : 'rgba(255,255,255,0.6)',
+                            border: `1px solid ${isShuffled ? '#6366f1' : 'rgba(99,102,241,0.2)'}`,
+                            borderRadius:10, padding:'5px 10px', cursor:'pointer',
+                            fontSize:11, fontWeight:800,
+                            color: isShuffled ? '#fff' : '#818cf8',
+                            transition:'all 0.2s',
+                        }}>
+                            🔀 {isShuffled ? 'Diacak' : 'Urut'}
+                        </button>
+                    </div>
+                    <div style={{display:'flex',gap:5,background:'rgba(255,255,255,0.5)',border:'1px solid rgba(99,102,241,0.12)',borderRadius:14,padding:5}}>
+                        {[['Semua',0],['Sesi 1',1],['Sesi 2',2],['Sesi 3',3]].map(([l,s]) => (
+                            <button key={s} onClick={() => setSession(s)} style={{
+                                flex:1, padding:'7px 0', border:'none', cursor:'pointer', borderRadius:10,
+                                fontWeight:800, fontSize:11,
+                                background: session===s ? '#6366f1' : 'transparent',
+                                color: session===s ? '#fff' : '#818cf8',
+                                boxShadow: session===s ? '0 2px 8px #6366f144' : 'none',
+                                transition:'all 0.18s',
+                            }}>{l}</button>
+                        ))}
+                    </div>
+                </div>
+
+                <Card>
+                    {/* Progress */}
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                        <span style={{fontSize:11,fontWeight:700,color:'#c7d2fe',letterSpacing:2,textTransform:'uppercase'}}>Kartu</span>
+                        <span style={{fontSize:12,fontWeight:800,color:'#6366f1'}}>{idx+1} / {list.length}</span>
+                    </div>
+                    <div style={{height:4,background:'#eef2ff',borderRadius:99,marginBottom:24,overflow:'hidden'}}>
+                        <div style={{height:'100%',borderRadius:99,background:'linear-gradient(90deg,#6366f1,#a78bfa)',width:`${progress}%`,transition:'width 0.4s ease'}} />
+                    </div>
+
+                    {/* Kartu flip */}
+                    <div onClick={() => setFlipped(!flipped)} style={{cursor:'pointer',perspective:1200,height:220,marginBottom:24}}>
+                        <div style={{
+                            width:'100%', height:'100%', position:'relative',
+                            transformStyle:'preserve-3d', transition:'transform 0.5s cubic-bezier(.4,0,.2,1)',
+                            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0)',
+                        }}>
+                            {/* Depan */}
+                            <div style={{
+                                position:'absolute', inset:0, backfaceVisibility:'hidden',
+                                background:'linear-gradient(135deg,#f0f4ff 0%,#fafbff 100%)',
+                                borderRadius:20, border:'1px solid rgba(99,102,241,0.12)',
+                                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                                boxShadow:'0 4px 24px rgba(99,102,241,0.08)',
+                            }}>
+                                <div style={{fontSize:72,fontWeight:900,color:'#1e1b4b',lineHeight:1,marginBottom:12}}>{cur[0]}</div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#c7d2fe',letterSpacing:2,textTransform:'uppercase'}}>TAP UNTUK MELIHAT ARTI</div>
+                            </div>
+                            {/* Belakang */}
+                            <div style={{
+                                position:'absolute', inset:0, backfaceVisibility:'hidden',
+                                background:'linear-gradient(135deg,#6366f1 0%,#4f46e5 100%)',
+                                borderRadius:20, transform:'rotateY(180deg)',
+                                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                                boxShadow:'0 4px 24px rgba(99,102,241,0.25)',
+                                padding:24, textAlign:'center',
+                            }}>
+                                <div style={{fontSize:11,fontWeight:700,color:'#a5b4fc',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>PINYIN</div>
+                                <div style={{fontSize:28,fontWeight:900,color:'#fff',fontFamily:'monospace',marginBottom:16}}>{cur[1]}</div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#a5b4fc',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>ARTI</div>
+                                <div style={{fontSize:22,fontWeight:800,color:'#a7f3d0'}}>{cur[2]}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigasi */}
+                    <div style={{display:'flex',gap:10}}>
+                        <button onClick={() => { setFlipped(false); setIdx(p => Math.max(0, p-1)); }} disabled={idx===0} style={{
+                            flex:'0 0 auto', padding:'14px 18px', border:'1px solid #e0e7ff',
+                            background:'#f5f7ff', borderRadius:14, fontWeight:700, fontSize:14,
+                            color: idx===0 ? '#c7d2fe' : '#6366f1', cursor: idx===0 ? 'default' : 'pointer',
+                            transition:'all 0.18s',
+                        }}>◀</button>
+                        <button onClick={() => {
+                            setFlipped(false);
+                            if (idx + 1 >= list.length) setDone(true);
+                            else setIdx(p => p + 1);
+                        }} style={{
+                            flex:1, padding:'14px', border:'none', cursor:'pointer',
+                            background:'linear-gradient(135deg,#6366f1,#4f46e5)',
+                            borderRadius:14, fontWeight:800, fontSize:14, color:'#fff',
+                            boxShadow:'0 4px 16px rgba(99,102,241,0.35)', transition:'all 0.18s',
+                        }}>
+                            {idx+1 >= list.length ? '🎉 Selesai' : 'Kartu Berikutnya ➔'}
+                        </button>
+                    </div>
+                </Card>
+                </>
+            );
+        }
+
+        // ══════════════════════════════════════════
+        //   QUIZ MODE (timer 45/60 menit, nada ketat)
+        // ══════════════════════════════════════════
+        function QuizMode() {
+            const [isShuffled, setIsShuffled] = useState(false);
+            const [list, setList] = useState(WORDS);
+            const [idx, setIdx] = useState(0);
+            const [pinyin, setPinyin] = useState('');
+            const [meaning, setMeaning] = useState('');
+            const [score, setScore] = useState(0);
+            const [answered, setAnswered] = useState({});
+            const [wrongList, setWrongList] = useState([]);
+            const [showResult, setShowResult] = useState(false);
+            const [finished, setFinished] = useState(false);
+            const [timerMode, setTimerMode] = useState(2700);
+            const [timeLeft, setTimeLeft] = useState(2700);
+            const [started, setStarted] = useState(false);
+            const [flash, setFlash] = useState(null);
+            const inputRef = useRef(null);
+
+            useEffect(() => {
+                if (!started || finished || timeLeft <= 0) {
+                    if (timeLeft <= 0) setFinished(true);
+                    return;
+                }
+                const t = setInterval(() => setTimeLeft(p => p - 1), 1000);
+                return () => clearInterval(t);
+            }, [started, finished, timeLeft]);
+
+            const cur = list[idx] || WORDS[0];
+            const danger = timeLeft <= 300;
+            const fmtTime = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+            const progress = ((idx) / list.length) * 100;
+            const maxScore = list.length * 2;
+
+            const checkAnswer = () => {
+                if (!started) setStarted(true);
+                if (showResult) return;
+                let earned = 0;
+                const userP = normPinyin(pinyin);
+                const correctP = normPinyin(cur[1]);
+                const pinyinOk = userP === correctP;
+                if (pinyin.trim() !== '' && pinyinOk) earned++;
+                const meaningOk = meaning.trim() !== '' && (
+                    normMeaning(cur[2]).includes(normMeaning(meaning)) ||
+                    normMeaning(meaning).includes(normMeaning(cur[2]))
+                );
+                if (meaningOk) earned++;
+                setScore(p => p + earned);
+                const allCorrect = pinyinOk && meaningOk;
+                setFlash(allCorrect ? 'correct' : 'wrong');
+                setTimeout(() => setFlash(null), 600);
+                if (!allCorrect) setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], meaning: cur[2] }]);
+                setAnswered(p => ({ ...p, [idx]: { pinyin: cur[1], meaning: cur[2], pinyinOk, meaningOk } }));
+                setShowResult(true);
+            };
+
+            const nextQ = () => {
+                setShowResult(false); setPinyin(''); setMeaning('');
+                if (idx + 1 >= list.length) setFinished(true);
+                else { setIdx(p => p + 1); setTimeout(() => inputRef.current?.focus(), 50); }
+            };
+
+            const changeTimer = (secs) => {
+                if (started) return;
+                setTimerMode(secs); setTimeLeft(secs);
+            };
+
+            const toggleShuffle = () => {
+                const newList = !isShuffled ? shuffle([...WORDS]) : WORDS;
+                setList(newList); setIsShuffled(p => !p);
+                setIdx(0); setPinyin(''); setMeaning(''); setScore(0);
+                setAnswered({}); setWrongList([]); setShowResult(false);
+                setFinished(false); setTimeLeft(timerMode); setStarted(false);
+            };
+
+            const finalScore = Math.round((score / maxScore) * 100);
+
+            if (finished) return (
+                <FinishScreen score={finalScore} label="Quiz" color="#059669"
+                    extra={started ? `Sisa waktu: ${fmtTime(timeLeft)}` : ''}
+                    wrongList={wrongList} onRetry={() => {
+                        const newList = isShuffled ? shuffle([...WORDS]) : WORDS;
+                        setList(newList);
+                        setIdx(0); setPinyin(''); setMeaning(''); setScore(0);
+                        setAnswered({}); setWrongList([]); setShowResult(false);
+                        setFinished(false); setTimeLeft(timerMode); setStarted(false);
+                    }} />
+            );
+
+            return (
+                <>
+                {/* Shuffle + Timer row */}
+                <div style={{display:'flex',gap:8,marginBottom:14}}>
+                    <button onClick={toggleShuffle} style={{
+                        display:'flex', alignItems:'center', gap:5, flexShrink:0,
+                        background: isShuffled ? '#059669' : 'rgba(255,255,255,0.7)',
+                        border: `1px solid ${isShuffled ? '#059669' : 'rgba(16,185,129,0.25)'}`,
+                        borderRadius:12, padding:'10px 12px', cursor:'pointer',
+                        fontSize:11, fontWeight:800,
+                        color: isShuffled ? '#fff' : '#059669',
+                        backdropFilter:'blur(8px)', transition:'all 0.2s',
+                        boxShadow: isShuffled ? '0 2px 8px #05996944' : 'none',
+                    }}>
+                        🔀 {isShuffled ? 'Diacak' : 'Urut'}
+                    </button>
+                    <div style={{
+                        flex:1, display:'flex', alignItems:'center', gap:6,
+                        background: danger ? 'rgba(254,226,226,0.8)' : 'rgba(236,253,245,0.8)',
+                        border: `1px solid ${danger ? '#fca5a5' : '#a7f3d0'}`,
+                        borderRadius:12, padding:'8px 12px',
+                        backdropFilter:'blur(8px)', transition:'all 0.3s',
+                    }}>
+                        <span style={{fontSize:11,fontWeight:700,color: danger ? '#dc2626' : '#059669',flexShrink:0}}>⏱️</span>
+                        {!started ? (
+                            <>
+                                {[[2700,'45m'],[3600,'60m']].map(([s,lbl]) => (
+                                    <button key={s} onClick={() => changeTimer(s)} style={{
+                                        flex:1, border:'none', borderRadius:8, cursor:'pointer',
+                                        padding:'5px 0', fontSize:11, fontWeight:800,
+                                        background: timerMode===s ? '#059669' : 'rgba(255,255,255,0.8)',
+                                        color: timerMode===s ? '#fff' : '#059669',
+                                        transition:'all 0.15s',
+                                    }}>{lbl}</button>
+                                ))}
+                                <button onClick={() => setStarted(true)} style={{
+                                    background:'#059669', color:'#fff', border:'none', borderRadius:8,
+                                    padding:'5px 12px', fontSize:11, fontWeight:800, cursor:'pointer', flexShrink:0,
+                                }}>▶ Mulai</button>
+                            </>
+                        ) : (
+                            <span style={{
+                                flex:1, textAlign:'right',
+                                fontSize:14, fontWeight:900, fontFamily:'monospace',
+                                color: danger ? '#dc2626' : '#059669',
+                                ...(danger && {animation:'blink 0.7s ease infinite'}),
+                            }}>{fmtTime(timeLeft)}</span>
+                        )}
+                    </div>
+                </div>
+
+                <Card flash={flash}>
+                    {/* Progress bar */}
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                        <span style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:2,textTransform:'uppercase'}}>Soal</span>
+                        <span style={{fontSize:12,fontWeight:800,color:'#059669'}}>{idx+1} / {list.length}</span>
+                    </div>
+                    <div style={{height:4,background:'#f0fdf4',borderRadius:99,marginBottom:20,overflow:'hidden'}}>
+                        <div style={{height:'100%',borderRadius:99,background:'linear-gradient(90deg,#10b981,#34d399)',width:`${progress}%`,transition:'width 0.4s ease'}} />
+                    </div>
+
+                    {/* Hanzi */}
+                    <div style={{
+                        textAlign:'center', background:'linear-gradient(135deg,#f0fdf4,#f8faff)',
+                        border:'1px solid rgba(16,185,129,0.12)', borderRadius:20,
+                        padding:'24px 16px', marginBottom:20,
+                    }}>
+                        <div style={{fontSize:80,fontWeight:900,color:'#1e1b4b',lineHeight:1}}>{cur[0]}</div>
+                    </div>
+
+                    {/* Kunci (muncul setelah jawab) */}
+                    {answered[idx] && showResult && (
+                        <div style={{
+                            background:'linear-gradient(135deg,#f0fdf4,#ecfdf5)',
+                            border:'1px solid #a7f3d0', borderRadius:14, padding:'12px 16px', marginBottom:14,
+                            animation:'slide-up 0.3s ease',
+                        }}>
+                            <p style={{fontSize:10,fontWeight:800,color:'#059669',letterSpacing:2,textTransform:'uppercase',marginBottom:6}}>Kunci Jawaban</p>
+                            <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                                    <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>Pinyin</span>
+                                    <span style={{fontSize:14,fontFamily:'monospace',fontWeight:800,color:answered[idx].pinyinOk?'#059669':'#dc2626'}}>
+                                        {answered[idx].pinyinOk?'✓':'✗'} {cur[1]}
+                                    </span>
+                                </div>
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                                    <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>Arti</span>
+                                    <span style={{fontSize:14,fontWeight:800,color:answered[idx].meaningOk?'#059669':'#dc2626'}}>
+                                        {answered[idx].meaningOk?'✓':'✗'} {cur[2]}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Input */}
+                    <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
+                        <Input ref={inputRef} label="Pinyin (â î ô û ê = nada 3)" placeholder="contoh: hǎo atau hâo"
+                            value={pinyin} disabled={showResult}
+                            onChange={e => setPinyin(e.target.value)}
+                            onKeyDown={e => e.key==='Enter' && !showResult && checkAnswer()} />
+                        <Input label="Arti Indonesia" placeholder="contoh: baik, bagus"
+                            value={meaning} disabled={showResult}
+                            onChange={e => setMeaning(e.target.value)}
+                            onKeyDown={e => e.key==='Enter' && !showResult && checkAnswer()} />
+                    </div>
+
+                    {/* Tombol */}
+                    <div style={{display:'flex',gap:8}}>
+                        {!showResult ? (
+                            <Btn color="#059669" onClick={checkAnswer} full>Kirim Jawaban</Btn>
+                        ) : (
+                            <Btn color="#10b981" onClick={nextQ} full>
+                                {idx+1 >= list.length ? '🏆 Lihat Skor' : 'Soal Berikutnya ➔'}
+                            </Btn>
+                        )}
+                    </div>
+                </Card>
+
+                <WrongList items={wrongList} />
+                </>
+            );
+        }
+
+        // ══════════════════════════════════════════
+        //   BLIND RECALL MODE 🧠
+        //   - Tampil ARTI INDONESIA saja → ketik HANZI + PINYIN
+        //   - Tanpa petunjuk apapun, hafalan murni
+        // ══════════════════════════════════════════
+        function BlindRecallMode() {
+            const amber = '#d97706';
+            const [list, setList] = useState(() => shuffle(WORDS));
+            const [idx, setIdx] = useState(0);
+            const [hanzi, setHanzi] = useState('');
+            const [pinyin, setPinyin] = useState('');
+            const [showResult, setShowResult] = useState(false);
+            const [score, setScore] = useState(0);
+            const [answered, setAnswered] = useState({});
+            const [wrongList, setWrongList] = useState([]);
+            const [finished, setFinished] = useState(false);
+            const [flash, setFlash] = useState(null);
+            const [round, setRound] = useState(1);
+            const inputRef = useRef(null);
+
+            const cur = list[idx] || WORDS[0];
+            const maxScore = list.length * 2;
+            const progress = (idx / list.length) * 100;
+            const finalScore = Math.round((score / maxScore) * 100);
+
+            const checkAnswer = () => {
+                if (showResult) return;
+                const hanziOk = hanzi.trim() === cur[0];
+                const pinyinOk = normPinyin(pinyin) === normPinyin(cur[1]);
+                let earned = 0;
+                if (hanziOk) earned++;
+                if (pinyinOk) earned++;
+                setScore(p => p + earned);
+                setFlash((hanziOk && pinyinOk) ? 'correct' : 'wrong');
+                setTimeout(() => setFlash(null), 600);
+                if (!hanziOk || !pinyinOk) setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], meaning: cur[2] }]);
+                setAnswered(p => ({ ...p, [idx]: { hanziOk, pinyinOk } }));
+                setShowResult(true);
+            };
+
+            const nextQ = () => {
+                setShowResult(false); setHanzi(''); setPinyin('');
+                if (idx + 1 >= list.length) setFinished(true);
+                else { setIdx(p => p + 1); setTimeout(() => inputRef.current?.focus(), 50); }
+            };
+
+            const retry = () => {
+                setList(shuffle(WORDS)); setIdx(0); setHanzi(''); setPinyin('');
+                setScore(0); setAnswered({}); setWrongList([]);
+                setShowResult(false); setFinished(false); setFlash(null);
+                setRound(p => p + 1);
+            };
+
+            if (finished) return (
+                <div>
+                    <Card>
+                        <div style={{textAlign:'center',padding:'16px 0'}}>
+                            <div style={{fontSize:52,marginBottom:8}}>{finalScore>=80?'🏆':finalScore>=60?'🎯':'📚'}</div>
+                            <h2 style={{fontSize:22,fontWeight:900,color:'#1e1b4b',margin:'0 0 4px'}}>Blind Recall Selesai!</h2>
+                            <p style={{color:'#94a3b8',fontSize:12,marginBottom:20}}>Hasil hafalan murni kamu</p>
+                            <div style={{background:'linear-gradient(135deg,#fffbeb,#fef3c7)',border:'1px solid #fde68a',borderRadius:20,padding:'20px 16px',marginBottom:16}}>
+                                <p style={{fontSize:10,fontWeight:800,color:amber,letterSpacing:2,textTransform:'uppercase',margin:'0 0 4px'}}>Skor Akhir</p>
+                                <div style={{fontSize:60,fontWeight:900,color:amber,lineHeight:1}}>
+                                    {finalScore}<span style={{fontSize:20,color:'#fbbf24',fontWeight:700}}>/100</span>
+                                </div>
+                                <p style={{fontSize:12,color:'#92400e',marginTop:8,fontWeight:600}}>Putaran #{round} · {wrongList.length} kata perlu dihapal lagi</p>
+                            </div>
+                            <Btn color={amber} onClick={retry} full>Ulangi (Acak Ulang) 🧠</Btn>
+                        </div>
+                    </Card>
+                    {wrongList.length > 0 && (
+                        <div style={{background:'rgba(255,251,235,0.8)',backdropFilter:'blur(8px)',border:'1px solid #fde68a',borderRadius:20,padding:'14px 16px',marginTop:4}}>
+                            <p style={{fontSize:11,fontWeight:800,color:amber,letterSpacing:2,textTransform:'uppercase',marginBottom:10}}>❌ Perlu Dihapal Lagi ({wrongList.length})</p>
+                            <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:240,overflowY:'auto'}}>
+                                {wrongList.map((item,i) => (
+                                    <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(255,255,255,0.8)',border:'1px solid #fde68a',borderRadius:12,padding:'10px 12px'}}>
+                                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                            <span style={{fontSize:22,fontWeight:900,color:'#1e1b4b'}}>{item.hanzi}</span>
+                                            <span style={{fontSize:11,fontFamily:'monospace',fontWeight:700,color:amber,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:6,padding:'2px 7px'}}>{item.pinyin}</span>
+                                        </div>
+                                        <span style={{fontSize:12,fontWeight:700,color:'#64748b'}}>{item.meaning}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+
+            return (
+                <>
+                <div style={{
+                    display:'flex', justifyContent:'space-between', alignItems:'center',
+                    background:'rgba(255,251,235,0.85)', backdropFilter:'blur(8px)',
+                    border:'1px solid #fde68a', borderRadius:14, padding:'10px 16px', marginBottom:12,
+                }}>
+                    <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        <span style={{fontSize:16}}>🧠</span>
+                        <span style={{fontSize:11,fontWeight:800,color:amber}}>BLIND RECALL</span>
+                    </div>
+                    <span style={{fontSize:11,fontWeight:700,color:'#92400e'}}>Putaran #{round}</span>
+                    <span style={{fontSize:12,fontWeight:800,color:amber}}>{idx+1}/{list.length}</span>
+                </div>
+
+                <Card flash={flash}>
+                    <div style={{height:4,background:'#fffbeb',borderRadius:99,marginBottom:20,overflow:'hidden'}}>
+                        <div style={{height:'100%',borderRadius:99,background:`linear-gradient(90deg,${amber},#fbbf24)`,width:`${progress}%`,transition:'width 0.4s ease'}} />
+                    </div>
+
+                    <div style={{
+                        textAlign:'center', background:'linear-gradient(135deg,#fffbeb,#fef9c3)',
+                        border:'1px solid #fde68a', borderRadius:20, padding:'28px 16px', marginBottom:20,
+                    }}>
+                        <p style={{fontSize:10,fontWeight:800,color:'#fbbf24',letterSpacing:2,textTransform:'uppercase',margin:'0 0 10px'}}>ARTI INDONESIA</p>
+                        <div style={{fontSize:26,fontWeight:900,color:'#1e1b4b',lineHeight:1.3}}>{cur[2]}</div>
+                        <p style={{fontSize:10,color:amber,fontWeight:700,marginTop:10,opacity:0.75}}>Ketik Hanzi & Pinyin dari ingatan!</p>
+                    </div>
+
+                    {showResult && answered[idx] && (
+                        <div style={{
+                            background:(answered[idx].hanziOk&&answered[idx].pinyinOk)?'#f0fdf4':'#fff1f2',
+                            border:`1px solid ${(answered[idx].hanziOk&&answered[idx].pinyinOk)?'#a7f3d0':'#fecaca'}`,
+                            borderRadius:14, padding:'12px 16px', marginBottom:14, animation:'slide-up 0.3s ease',
+                        }}>
+                            <p style={{fontSize:10,fontWeight:800,color:(answered[idx].hanziOk&&answered[idx].pinyinOk)?'#059669':'#dc2626',letterSpacing:2,textTransform:'uppercase',marginBottom:8}}>Jawaban Benar</p>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                                <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>Hanzi</span>
+                                <span style={{fontSize:24,fontWeight:900,color:answered[idx].hanziOk?'#059669':'#dc2626'}}>
+                                    {answered[idx].hanziOk?'✓':'✗'} {cur[0]}
+                                </span>
+                            </div>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                                <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>Pinyin</span>
+                                <span style={{fontSize:14,fontFamily:'monospace',fontWeight:800,color:answered[idx].pinyinOk?'#059669':'#dc2626'}}>
+                                    {answered[idx].pinyinOk?'✓':'✗'} {cur[1]}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
+                        <Input ref={inputRef} label="Aksara Hanzi" placeholder="Ketik aksara Hanzi-nya..."
+                            value={hanzi} disabled={showResult}
+                            onChange={e => setHanzi(e.target.value)}
+                            onKeyDown={e => e.key==='Enter' && !showResult && checkAnswer()}
+                            accent={amber} />
+                        <Input label="Pinyin (â î ô û ê = nada 3)" placeholder="contoh: hǎo atau hâo"
+                            value={pinyin} disabled={showResult}
+                            onChange={e => setPinyin(e.target.value)}
+                            onKeyDown={e => e.key==='Enter' && !showResult && checkAnswer()}
+                            accent={amber} />
+                    </div>
+
+                    {!showResult ? (
+                        <Btn color={amber} onClick={checkAnswer} full>Kirim Jawaban 🧠</Btn>
+                    ) : (
+                        <Btn color="#b45309" onClick={nextQ} full>
+                            {idx+1 >= list.length ? '🏆 Lihat Skor' : 'Soal Berikutnya ➔'}
+                        </Btn>
+                    )}
+                </Card>
+                </>
+            );
+        }
+
+        // ══════════════════════════════════════════
+        //   HARDCORE MODE
+        //   - Tampil HANZI → ketik PINYIN + ARTI
+        //   - 15 detik / soal, 3 nyawa, streak combo
+        //   - Soal diacak ulang setiap retry
+        //   - Streak ≥5 = +1 bonus poin
+        // ══════════════════════════════════════════
+        function HardcoreMode() {
+            const [list, setList] = useState(() => shuffle(WORDS));
+            const [idx, setIdx] = useState(0);
+            const [timeLeft, setTimeLeft] = useState(15);
+            const [lives, setLives] = useState(3);
+            const [streak, setStreak] = useState(0);
+            const [maxStreak, setMaxStreak] = useState(0);
+            const [score, setScore] = useState(0);
+            const [pinyin, setPinyin] = useState('');
+            const [meaning, setMeaning] = useState('');
+            const [phase, setPhase] = useState('input');
+            const [lastCorrect, setLastCorrect] = useState(null);
+            const [shake, setShake] = useState(false);
+            const [finished, setFinished] = useState(false);
+            const [wrongList, setWrongList] = useState([]);
+            const [history, setHistory] = useState([]);
+            const [heartFlash, setHeartFlash] = useState(false);
+            const [slowBonus, setSlowBonus] = useState(0); // soal tersisa efek slow (2x timer)
+            const inputRef = useRef(null);
+
+            const cur = list[idx] || WORDS[0];
+            const maxScore = list.length * 2;
+            const timerMax = slowBonus > 0 ? 30 : 15;
+
+            // Timer
+            useEffect(() => {
+                if (phase !== 'input' || finished) return;
+                if (timeLeft <= 0) {
+                    handleTimeout();
+                    return;
+                }
+                const t = setInterval(() => setTimeLeft(p => p - 1), 1000);
+                return () => clearInterval(t);
+            }, [phase, finished, timeLeft]);
+
+            const handleTimeout = () => {
+                // Waktu habis = salah
+                const newLives = lives - 1;
+                setLives(newLives);
+                setStreak(0);
+                setHeartFlash(true); setTimeout(() => setHeartFlash(false), 500);
+                setShake(true); setTimeout(() => setShake(false), 500);
+                setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], meaning: cur[2] }]);
+                setLastCorrect({ timeout: true, pinyin: cur[1], meaning: cur[2] });
+                if (newLives <= 0) {
+                    setPhase('dead');
+                } else {
+                    setPhase('result');
+                    setTimeout(() => advance(idx, score, newLives), 1500);
+                }
+            };
+
+            const submit = () => {
+                if (phase !== 'input') return;
+                const userP = normPinyin(pinyin);
+                const correctP = normPinyin(cur[1]);
+                const pinyinOk = userP === correctP;
+                const meaningOk = meaning.trim() !== '' && (
+                    normMeaning(cur[2]).includes(normMeaning(meaning)) ||
+                    normMeaning(meaning).includes(normMeaning(cur[2]))
+                );
+                const allOk = pinyinOk && meaningOk;
+
+                let earned = 0;
+                if (pinyinOk) earned++;
+                if (meaningOk) earned++;
+                const newStreak = allOk ? streak + 1 : 0;
+                // Bonus streak ≥5: timer melambat 2x selama 3 soal ke depan
+                if (allOk && newStreak % 5 === 0) setSlowBonus(3);
+                const newScore = Math.min(score + earned, maxScore);
+                setScore(newScore);
+                setStreak(newStreak);
+                setMaxStreak(p => Math.max(p, newStreak));
+                setLastCorrect({ pinyinOk, meaningOk, allOk, pinyin: cur[1], meaning: cur[2], streak: newStreak });
+
+                let newLives = lives;
+                if (!allOk) {
+                    newLives = lives - 1;
+                    setLives(newLives);
+                    setShake(true); setTimeout(() => setShake(false), 500);
+                    setHeartFlash(true); setTimeout(() => setHeartFlash(false), 500);
+                    setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], meaning: cur[2] }]);
+                }
+
+                setPhase('result');
+                if (newLives <= 0 && !allOk) {
+                    setTimeout(() => setPhase('dead'), 1200);
+                } else {
+                    setTimeout(() => advance(idx, newScore, newLives), 1600);
+                }
+            };
+
+            const advance = (curIdx, curScore, curLives) => {
+                const nextIdx = curIdx + 1;
+                if (nextIdx >= list.length || curLives <= 0) {
+                    setFinished(true);
+                    const finalVal = Math.round((curScore / (list.length * 2)) * 100);
+                    setHistory(p => [{ nilai: finalVal, soal: nextIdx, streak: maxStreak }, ...p]);
+                } else {
+                    setIdx(nextIdx);
+                    setSlowBonus(p => {
+                        const next = Math.max(0, p - 1);
+                        setTimeLeft(next > 0 ? 30 : 15);
+                        return next;
+                    });
+                    setPinyin(''); setMeaning('');
+                    setPhase('input');
+                    setTimeout(() => inputRef.current?.focus(), 50);
+                }
+            };
+
+            const retry = () => {
+                const newList = shuffle(WORDS);
+                setList(newList);
+                setIdx(0); setTimeLeft(15); setLives(3); setStreak(0); setMaxStreak(0);
+                setScore(0); setPinyin(''); setMeaning('');
+                setPhase('input'); setLastCorrect(null); setShake(false);
+                setFinished(false); setWrongList([]); setSlowBonus(0);
+            };
+
+            const timerPct = (timeLeft / timerMax) * 100;
+            const timerDanger = timeLeft <= 5;
+            const finalScore = Math.round((score / maxScore) * 100);
+
+            if (finished || phase === 'dead') return (
+                <div>
+                    <Card>
+                        <div style={{textAlign:'center',padding:'16px 0'}}>
+                            <div style={{fontSize:52,marginBottom:8}}>{phase==='dead' && !finished ? '💔' : '💀'}</div>
+                            <h2 style={{fontSize:22,fontWeight:900,color:'#1e1b4b',margin:'0 0 4px'}}>
+                                {phase==='dead' && !finished ? 'NYAWA HABIS!' : 'Hardcore Selesai!'}
+                            </h2>
+                            <p style={{color:'#94a3b8',fontSize:12,marginBottom:20}}>
+                                {phase==='dead' && !finished ? `Gugur di soal ${idx+1}` : 'Semua soal selesai'}
+                            </p>
+                            <div style={{background:'linear-gradient(135deg,#fff1f2,#ffe4e6)',border:'1px solid #fecaca',borderRadius:20,padding:'20px 16px',marginBottom:16}}>
+                                <p style={{fontSize:10,fontWeight:800,color:'#f87171',letterSpacing:2,textTransform:'uppercase',margin:'0 0 4px'}}>Skor Akhir</p>
+                                <div style={{fontSize:60,fontWeight:900,color:'#dc2626',lineHeight:1}}>{finalScore}<span style={{fontSize:20,color:'#fca5a5',fontWeight:700}}>/100</span></div>
+                                <div style={{display:'flex',justifyContent:'center',gap:20,marginTop:12}}>
+                                    <div style={{textAlign:'center'}}>
+                                        <p style={{fontSize:10,color:'#fca5a5',fontWeight:700,margin:'0 0 2px'}}>SOAL</p>
+                                        <p style={{fontSize:18,fontWeight:900,color:'#dc2626',margin:0}}>{idx}</p>
+                                    </div>
+                                    <div style={{textAlign:'center'}}>
+                                        <p style={{fontSize:10,color:'#fca5a5',fontWeight:700,margin:'0 0 2px'}}>MAX STREAK</p>
+                                        <p style={{fontSize:18,fontWeight:900,color:'#dc2626',margin:0}}>{maxStreak}🔥</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <Btn color="#dc2626" onClick={retry} full>Coba Lagi 💀</Btn>
+                        </div>
+                    </Card>
+
+                    {history.length > 0 && (
+                        <div style={{marginTop:14}}>
+                            <p style={{fontSize:11,fontWeight:800,color:'#94a3b8',letterSpacing:2,textTransform:'uppercase',textAlign:'center',marginBottom:8}}>Riwayat Hardcore</p>
+                            {history.slice(0,5).map((h,i) => (
+                                <div key={i} style={{
+                                    display:'flex',justifyContent:'space-between',alignItems:'center',
+                                    background:'rgba(255,255,255,0.65)', backdropFilter:'blur(8px)',
+                                    border:'1px solid rgba(220,38,38,0.12)', borderRadius:12,
+                                    padding:'10px 14px', marginBottom:6, fontSize:12, fontWeight:700,
+                                }}>
+                                    <span style={{color:'#94a3b8'}}>Percobaan #{history.length - i}</span>
+                                    <span style={{color:'#dc2626'}}>{h.nilai}/100 · 🔥{h.streak}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <WrongList items={wrongList} color="red" />
+                </div>
+            );
+
+            return (
+                <div className={shake ? 'shake' : ''}>
+                    {/* HUD */}
+                    <div style={{
+                        display:'flex', justifyContent:'space-between', alignItems:'center',
+                        background:'rgba(255,255,255,0.6)', backdropFilter:'blur(10px)',
+                        border:'1px solid rgba(220,38,38,0.14)', borderRadius:16,
+                        padding:'10px 16px', marginBottom:12,
+                    }}>
+                        {/* Nyawa */}
+                        <div style={{display:'flex',gap:3}}>
+                            {[1,2,3].map(n => (
+                                <span key={n} style={{
+                                    fontSize:20,
+                                    filter: n > lives ? 'grayscale(1) opacity(0.3)' : 'none',
+                                    ...(heartFlash && n === lives ? {animation:'heart-pop 0.4s ease'} : {}),
+                                }}>❤️</span>
+                            ))}
+                        </div>
+                        {/* Streak + Slow Bonus */}
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                            <div style={{
+                                display:'flex', alignItems:'center', gap:4,
+                                background: streak >= 5 ? 'linear-gradient(135deg,#fbbf24,#f59e0b)' : 'rgba(251,191,36,0.12)',
+                                border: `1px solid ${streak >= 5 ? '#fbbf24' : 'rgba(251,191,36,0.2)'}`,
+                                borderRadius:10, padding:'4px 10px',
+                            }}>
+                                <span style={{fontSize:14}}>🔥</span>
+                                <span style={{fontSize:13,fontWeight:900,color: streak >= 5 ? '#fff' : '#f59e0b'}}>
+                                    {streak}
+                                </span>
+                            </div>
+                            {slowBonus > 0 && (
+                                <div style={{
+                                    display:'flex',alignItems:'center',gap:3,
+                                    background:'linear-gradient(135deg,#dbeafe,#eff6ff)',
+                                    border:'1px solid #93c5fd', borderRadius:8, padding:'2px 8px',
+                                }}>
+                                    <span style={{fontSize:11}}>⚡</span>
+                                    <span style={{fontSize:10,fontWeight:900,color:'#2563eb'}}>SLOW ×{slowBonus}</span>
+                                </div>
+                            )}
+                        </div>
+                        {/* Soal */}
+                        <span style={{fontSize:12,fontWeight:800,color:'#dc2626'}}>{idx+1}/{list.length}</span>
+                    </div>
+
+                    <Card border="rgba(220,38,38,0.15)">
+                        {/* Timer bar */}
+                        <div style={{height:6,background:'#fee2e2',borderRadius:99,marginBottom:16,overflow:'hidden'}}>
+                            <div style={{
+                                height:'100%', borderRadius:99,
+                                background: timerDanger
+                                    ? 'linear-gradient(90deg,#ef4444,#dc2626)'
+                                    : 'linear-gradient(90deg,#f87171,#ef4444)',
+                                width:`${timerPct}%`, transition:'width 1s linear',
+                                ...(timerDanger && {animation:'blink 0.6s ease infinite'}),
+                            }} />
+                        </div>
+
+                        {/* Timer angka */}
+                        <div style={{textAlign:'center',marginBottom:8}}>
+                            <span style={{
+                                display:'inline-block', fontSize:timerDanger ? 40 : 32, fontWeight:900,
+                                color: timerDanger ? '#dc2626' : '#f87171',
+                                fontFamily:'monospace', lineHeight:1,
+                                ...(timerDanger && {animation:'blink 0.5s ease infinite'}),
+                            }}>{timeLeft}</span>
+                            <span style={{fontSize:11,color:'#fca5a5',fontWeight:700}}> detik</span>
+                        </div>
+
+                        {/* Hanzi (soal) */}
+                        <div style={{
+                            textAlign:'center',
+                            background:'linear-gradient(135deg,#fff1f2,#fafafa)',
+                            border:'1px solid rgba(220,38,38,0.1)', borderRadius:20,
+                            padding:'20px 16px', marginBottom:16,
+                        }}>
+                            <p style={{fontSize:10,fontWeight:800,color:'#fca5a5',letterSpacing:2,textTransform:'uppercase',margin:'0 0 8px'}}>AKSARA HANZI</p>
+                            <div style={{fontSize:84,fontWeight:900,color:'#1e1b4b',lineHeight:1}}>{cur[0]}</div>
+                        </div>
+
+                        {/* Hasil sebelum lanjut */}
+                        {phase === 'result' && lastCorrect && !lastCorrect.timeout && (
+                            <div style={{
+                                background: lastCorrect.allOk ? '#f0fdf4' : '#fff1f2',
+                                border: `1px solid ${lastCorrect.allOk ? '#a7f3d0' : '#fecaca'}`,
+                                borderRadius:14, padding:'10px 14px', marginBottom:12,
+                                animation:'slide-up 0.25s ease',
+                            }}>
+                                {lastCorrect.allOk
+                                    ? <p style={{fontSize:14,fontWeight:900,color:'#059669',textAlign:'center',margin:0}}>
+                                        ✅ Benar! {slowBonus > 0 && lastCorrect.streak % 5 === 0 && '⚡ STREAK! Timer 2× lebih lambat!'}
+                                      </p>
+                                    : <div>
+                                        <p style={{fontSize:12,fontWeight:800,color:'#dc2626',margin:'0 0 4px'}}>✗ Jawaban Benar:</p>
+                                        <p style={{fontSize:13,fontWeight:700,color:'#1e1b4b',margin:0}}>{lastCorrect.pinyin} · {lastCorrect.meaning}</p>
+                                      </div>
+                                }
+                            </div>
+                        )}
+                        {phase === 'result' && lastCorrect?.timeout && (
+                            <div style={{background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:14,padding:'10px 14px',marginBottom:12,animation:'slide-up 0.25s ease'}}>
+                                <p style={{fontSize:12,fontWeight:800,color:'#ea580c',margin:'0 0 2px'}}>⏰ Waktu Habis!</p>
+                                <p style={{fontSize:13,fontWeight:700,color:'#1e1b4b',margin:0}}>{lastCorrect.pinyin} · {lastCorrect.meaning}</p>
+                            </div>
+                        )}
+
+                        {/* Input */}
+                        {phase === 'input' && (
+                            <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:14}}>
+                                <Input ref={inputRef} label="Pinyin (â î ô û ê = nada 3)" placeholder="ketik pinyin..."
+                                    value={pinyin} onChange={e => setPinyin(e.target.value)}
+                                    onKeyDown={e => e.key==='Enter' && submit()}
+                                    accent="#dc2626" />
+                                <Input label="Arti Indonesia" placeholder="ketik arti..."
+                                    value={meaning} onChange={e => setMeaning(e.target.value)}
+                                    onKeyDown={e => e.key==='Enter' && submit()}
+                                    accent="#dc2626" />
+                                <Btn color="#dc2626" onClick={submit} full>Kirim ➔</Btn>
+                            </div>
+                        )}
+                    </Card>
+
+                    <WrongList items={wrongList} color="red" />
+                </div>
+            );
+        }
+
+        // ══════════════════════════════════════════
+        //   KOMPONEN BANTU
+        // ══════════════════════════════════════════
+
+        // ══════════════════════════════════════════
+        //   MODE NAMA — Hafal nama teman
+        //   Tampil Hanzi → tebak Pinyin + Nama Indonesia
+        // ══════════════════════════════════════════
+        function NamesMode() {
+            const [subMode, setSubMode] = useState('flashcard'); // 'flashcard' | 'quiz'
+            const [list, setList] = useState(NAMES);
+            const [isShuffled, setIsShuffled] = useState(false);
+            const [idx, setIdx] = useState(0);
+            const [flipped, setFlipped] = useState(false);
+            // Quiz
+            const [pinyin, setPinyin] = useState('');
+            const [nama, setNama] = useState('');
+            const [showResult, setShowResult] = useState(false);
+            const [score, setScore] = useState(0);
+            const [wrongList, setWrongList] = useState([]);
+            const [finished, setFinished] = useState(false);
+            const [answered, setAnswered] = useState({});
+            const inputRef = useRef(null);
+
+            const cur = list[idx] || NAMES[0];
+            const progress = ((idx) / list.length) * 100;
+            const maxScore = list.length * 2;
+            const finalScore = Math.round((score / maxScore) * 100);
+
+            const toggleShuffle = () => {
+                const newList = !isShuffled ? shuffle([...NAMES]) : NAMES;
+                setList(newList);
+                setIsShuffled(p => !p);
+                reset(newList);
+            };
+
+            const reset = (newList) => {
+                setIdx(0); setFlipped(false); setShowResult(false);
+                setPinyin(''); setNama(''); setScore(0);
+                setWrongList([]); setFinished(false); setAnswered({});
+            };
+
+            const checkAnswer = () => {
+                if (showResult) return;
+                const userP = normPinyin(pinyin);
+                const correctP = normPinyin(cur[1]);
+                const pinyinOk = userP === correctP;
+                const namaOk = nama.trim() !== '' &&
+                    cur[2].toLowerCase().includes(nama.trim().toLowerCase());
+                let earned = 0;
+                if (pinyinOk) earned++;
+                if (namaOk) earned++;
+                setScore(p => p + earned);
+                if (!pinyinOk || !namaOk) setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], nama: cur[2] }]);
+                setAnswered(p => ({ ...p, [idx]: { pinyinOk, namaOk, pinyin: cur[1], nama: cur[2] } }));
+                setShowResult(true);
+            };
+
+            const nextQ = () => {
+                setShowResult(false); setPinyin(''); setNama('');
+                if (idx + 1 >= list.length) setFinished(true);
+                else { setIdx(p => p + 1); setTimeout(() => inputRef.current?.focus(), 50); }
+            };
+
+            const purple = '#7c3aed';
+
+            // ── SELESAI ──
+            if (finished) return (
+                <div>
+                    <Card>
+                        <div style={{textAlign:'center',padding:'16px 0'}}>
+                            <div style={{fontSize:52,marginBottom:8}}>👥</div>
+                            <h2 style={{fontSize:22,fontWeight:900,color:'#1e1b4b',margin:'0 0 4px'}}>Quiz Nama Selesai!</h2>
+                            <p style={{color:'#94a3b8',fontSize:12,marginBottom:20}}>Hasil akhir kamu</p>
+                            <div style={{background:'linear-gradient(135deg,#f5f3ff,#ede9fe)',border:'1px solid #ddd6fe',borderRadius:20,padding:'20px 16px',marginBottom:16}}>
+                                <p style={{fontSize:10,fontWeight:800,color:purple,letterSpacing:2,textTransform:'uppercase',margin:'0 0 4px'}}>Skor Akhir</p>
+                                <div style={{fontSize:60,fontWeight:900,color:purple,lineHeight:1}}>
+                                    {finalScore}<span style={{fontSize:20,color:'#c4b5fd',fontWeight:700}}>/100</span>
+                                </div>
+                            </div>
+                            <Btn color={purple} onClick={() => { reset(); }} full>Ulangi Quiz Nama</Btn>
+                        </div>
+                    </Card>
+                    {wrongList.length > 0 && (
+                        <div style={{background:'rgba(245,243,255,0.7)',backdropFilter:'blur(8px)',border:'1px solid #ddd6fe',borderRadius:20,padding:'14px 16px',marginTop:4}}>
+                            <p style={{fontSize:11,fontWeight:800,color:purple,letterSpacing:2,textTransform:'uppercase',marginBottom:10}}>❌ Perlu Dihapal Lagi ({wrongList.length})</p>
+                            <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:240,overflowY:'auto'}}>
+                                {wrongList.map((item,i) => (
+                                    <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(255,255,255,0.8)',border:'1px solid #ede9fe',borderRadius:12,padding:'10px 12px'}}>
+                                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                            <span style={{fontSize:22,fontWeight:900,color:'#1e1b4b'}}>{item.hanzi}</span>
+                                            <span style={{fontSize:11,fontFamily:'monospace',fontWeight:700,color:purple,background:'#f5f3ff',border:'1px solid #ddd6fe',borderRadius:6,padding:'2px 7px'}}>{item.pinyin}</span>
+                                        </div>
+                                        <span style={{fontSize:12,fontWeight:700,color:'#64748b'}}>{item.nama}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+
+            return (
+                <div>
+                    {/* Sub-mode toggle + shuffle */}
+                    <div style={{display:'flex',gap:8,marginBottom:12}}>
+                        <div style={{flex:1,display:'flex',background:'rgba(255,255,255,0.55)',border:'1px solid #ddd6fe',borderRadius:14,padding:5,gap:5}}>
+                            {[['flashcard','🃏 Kartu'],['quiz','✏️ Quiz']].map(([m,label]) => (
+                                <button key={m} onClick={() => { setSubMode(m); reset(list); }} style={{
+                                    flex:1, padding:'8px 4px', border:'none', cursor:'pointer', borderRadius:10,
+                                    fontWeight:800, fontSize:12,
+                                    background: subMode===m ? purple : 'transparent',
+                                    color: subMode===m ? '#fff' : '#7c3aed',
+                                    boxShadow: subMode===m ? `0 2px 8px ${purple}44` : 'none',
+                                    transition:'all 0.18s',
+                                }}>{label}</button>
+                            ))}
+                        </div>
+                        <button onClick={toggleShuffle} style={{
+                            display:'flex', alignItems:'center', gap:5, flexShrink:0,
+                            background: isShuffled ? purple : 'rgba(255,255,255,0.7)',
+                            border: `1px solid ${isShuffled ? purple : '#ddd6fe'}`,
+                            borderRadius:12, padding:'8px 12px', cursor:'pointer',
+                            fontSize:11, fontWeight:800,
+                            color: isShuffled ? '#fff' : purple,
+                            backdropFilter:'blur(8px)', transition:'all 0.2s',
+                        }}>🔀 {isShuffled ? 'Acak' : 'Urut'}</button>
+                    </div>
+
+                    {/* ── FLASHCARD NAMA ── */}
+                    {subMode === 'flashcard' && (
+                        <Card border="#ddd6fe">
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                                <span style={{fontSize:11,fontWeight:700,color:'#c4b5fd',letterSpacing:2,textTransform:'uppercase'}}>Kartu Nama</span>
+                                <span style={{fontSize:12,fontWeight:800,color:purple}}>{idx+1} / {list.length}</span>
+                            </div>
+                            <div style={{height:4,background:'#f5f3ff',borderRadius:99,marginBottom:20,overflow:'hidden'}}>
+                                <div style={{height:'100%',borderRadius:99,background:`linear-gradient(90deg,${purple},#a78bfa)`,width:`${((idx+1)/list.length)*100}%`,transition:'width 0.4s ease'}} />
+                            </div>
+
+                            <div onClick={() => setFlipped(!flipped)} style={{cursor:'pointer',perspective:1200,height:220,marginBottom:20}}>
+                                <div style={{
+                                    width:'100%', height:'100%', position:'relative',
+                                    transformStyle:'preserve-3d', transition:'transform 0.5s cubic-bezier(.4,0,.2,1)',
+                                    transform: flipped ? 'rotateY(180deg)' : 'rotateY(0)',
+                                }}>
+                                    {/* Depan: Hanzi */}
+                                    <div style={{
+                                        position:'absolute', inset:0, backfaceVisibility:'hidden',
+                                        background:'linear-gradient(135deg,#f5f3ff,#fafbff)',
+                                        borderRadius:20, border:'1px solid #ddd6fe',
+                                        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                                    }}>
+                                        <div style={{fontSize:64,fontWeight:900,color:'#1e1b4b',lineHeight:1,marginBottom:12}}>{cur[0]}</div>
+                                        <div style={{fontSize:11,fontWeight:700,color:'#c4b5fd',letterSpacing:2,textTransform:'uppercase'}}>Tap untuk lihat nama</div>
+                                    </div>
+                                    {/* Belakang: Pinyin + Nama */}
+                                    <div style={{
+                                        position:'absolute', inset:0, backfaceVisibility:'hidden',
+                                        background:`linear-gradient(135deg,${purple},#6d28d9)`,
+                                        borderRadius:20, transform:'rotateY(180deg)',
+                                        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                                        padding:24, textAlign:'center',
+                                    }}>
+                                        <div style={{fontSize:10,fontWeight:700,color:'#c4b5fd',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>PINYIN</div>
+                                        <div style={{fontSize:22,fontWeight:900,color:'#fff',fontFamily:'monospace',marginBottom:14}}>{cur[1]}</div>
+                                        <div style={{fontSize:10,fontWeight:700,color:'#c4b5fd',letterSpacing:2,textTransform:'uppercase',marginBottom:4}}>NAMA</div>
+                                        <div style={{fontSize:18,fontWeight:900,color:'#fde68a',letterSpacing:1}}>{cur[2]}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{display:'flex',gap:10}}>
+                                <button onClick={() => { setFlipped(false); setIdx(p => Math.max(0,p-1)); }} disabled={idx===0} style={{
+                                    flex:'0 0 auto', padding:'14px 18px', border:`1px solid #ddd6fe`,
+                                    background:'#f5f3ff', borderRadius:14, fontWeight:700, fontSize:14,
+                                    color: idx===0 ? '#c4b5fd' : purple, cursor: idx===0 ? 'default' : 'pointer',
+                                }}>◀</button>
+                                <button onClick={() => {
+                                    setFlipped(false);
+                                    if (idx + 1 >= list.length) setIdx(0);
+                                    else setIdx(p => p + 1);
+                                }} style={{
+                                    flex:1, padding:'14px', border:'none', cursor:'pointer',
+                                    background:`linear-gradient(135deg,${purple},#6d28d9)`,
+                                    borderRadius:14, fontWeight:800, fontSize:14, color:'#fff',
+                                    boxShadow:`0 4px 16px ${purple}44`,
+                                }}>
+                                    {idx+1 >= list.length ? '🔄 Ulangi' : 'Berikutnya ➔'}
+                                </button>
+                            </div>
+                        </Card>
+                    )}
+
+                    {/* ── QUIZ NAMA ── */}
+                    {subMode === 'quiz' && (
+                        <Card border="#ddd6fe">
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                                <span style={{fontSize:11,fontWeight:700,color:'#c4b5fd',letterSpacing:2,textTransform:'uppercase'}}>Soal Nama</span>
+                                <span style={{fontSize:12,fontWeight:800,color:purple}}>{idx+1} / {list.length}</span>
+                            </div>
+                            <div style={{height:4,background:'#f5f3ff',borderRadius:99,marginBottom:16,overflow:'hidden'}}>
+                                <div style={{height:'100%',borderRadius:99,background:`linear-gradient(90deg,${purple},#a78bfa)`,width:`${progress}%`,transition:'width 0.4s ease'}} />
+                            </div>
+
+                            {/* Hanzi */}
+                            <div style={{
+                                textAlign:'center', background:'linear-gradient(135deg,#f5f3ff,#fafbff)',
+                                border:'1px solid #ddd6fe', borderRadius:20, padding:'20px 16px', marginBottom:16,
+                            }}>
+                                <p style={{fontSize:10,fontWeight:800,color:'#c4b5fd',letterSpacing:2,textTransform:'uppercase',margin:'0 0 8px'}}>Siapa ini?</p>
+                                <div style={{fontSize:64,fontWeight:900,color:'#1e1b4b',lineHeight:1}}>{cur[0]}</div>
+                            </div>
+
+                            {/* Kunci jawaban */}
+                            {showResult && answered[idx] && (
+                                <div style={{
+                                    background: (answered[idx].pinyinOk && answered[idx].namaOk) ? '#f0fdf4' : '#fff1f2',
+                                    border: `1px solid ${(answered[idx].pinyinOk && answered[idx].namaOk) ? '#a7f3d0' : '#fecaca'}`,
+                                    borderRadius:14, padding:'12px 16px', marginBottom:14, animation:'slide-up 0.3s ease',
+                                }}>
+                                    <p style={{fontSize:10,fontWeight:800,color: (answered[idx].pinyinOk && answered[idx].namaOk) ? '#059669':'#dc2626',letterSpacing:2,textTransform:'uppercase',marginBottom:6}}>Kunci Jawaban</p>
+                                    <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                                        <div style={{display:'flex',justifyContent:'space-between'}}>
+                                            <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>Pinyin</span>
+                                            <span style={{fontSize:13,fontFamily:'monospace',fontWeight:800,color: answered[idx].pinyinOk ? '#059669':'#dc2626'}}>
+                                                {answered[idx].pinyinOk ? '✓' : '✗'} {cur[1]}
+                                            </span>
+                                        </div>
+                                        <div style={{display:'flex',justifyContent:'space-between'}}>
+                                            <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>Nama</span>
+                                            <span style={{fontSize:13,fontWeight:800,color: answered[idx].namaOk ? '#059669':'#dc2626'}}>
+                                                {answered[idx].namaOk ? '✓' : '✗'} {cur[2]}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Input */}
+                            <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:14}}>
+                                <Input ref={inputRef} label="Pinyin nama (â î ô û ê = nada 3)" placeholder="contoh: Cài shùn ān"
+                                    value={pinyin} disabled={showResult}
+                                    onChange={e => setPinyin(e.target.value)}
+                                    onKeyDown={e => e.key==='Enter' && !showResult && checkAnswer()}
+                                    accent={purple} />
+                                <Input label="Nama Indonesia" placeholder="contoh: BILLY"
+                                    value={nama} disabled={showResult}
+                                    onChange={e => setNama(e.target.value)}
+                                    onKeyDown={e => e.key==='Enter' && !showResult && checkAnswer()}
+                                    accent={purple} />
+                            </div>
+
+                            {!showResult ? (
+                                <Btn color={purple} onClick={checkAnswer} full>Kirim Jawaban</Btn>
+                            ) : (
+                                <Btn color="#7c3aed" onClick={nextQ} full>
+                                    {idx+1 >= list.length ? '🏆 Lihat Skor' : 'Berikutnya ➔'}
+                                </Btn>
+                            )}
+                        </Card>
+                    )}
+                </div>
+            );
+        }
+
+        function Card({ children, flash, border }) {
+            let bg = 'rgba(255,255,255,0.75)';
+            if (flash === 'correct') bg = 'rgba(209,250,229,0.9)';
+            if (flash === 'wrong') bg = 'rgba(254,226,226,0.9)';
+            return (
+                <div style={{
+                    background: bg,
+                    backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)',
+                    border: `1px solid ${border || 'rgba(255,255,255,0.9)'}`,
+                    borderRadius:24, padding:'20px 18px', marginBottom:14,
+                    boxShadow:'0 4px 32px rgba(99,102,241,0.08)',
+                    transition:'background 0.3s ease',
+                }}>
+                    {children}
+                </div>
+            );
+        }
+
+        const Input = React.forwardRef(function Input({ label, placeholder, value, onChange, onKeyDown, disabled, accent }, ref) {
+            const color = accent || '#6366f1';
+            return (
+                <div>
+                    <label style={{display:'block',fontSize:10,fontWeight:800,color:'#94a3b8',letterSpacing:2,textTransform:'uppercase',marginBottom:5}}>{label}</label>
+                    <input ref={ref} type="text" value={value} placeholder={placeholder}
+                        onChange={onChange} onKeyDown={onKeyDown} disabled={disabled}
+                        style={{
+                            width:'100%', boxSizing:'border-box',
+                            background: disabled ? '#f8fafc' : '#fff',
+                            border:`1.5px solid ${disabled ? '#e2e8f0' : '#e0e7ef'}`,
+                            borderRadius:12, padding:'12px 14px', fontSize:14, fontWeight:600,
+                            color:'#1e1b4b', outline:'none', fontFamily:'monospace',
+                            opacity: disabled ? 0.6 : 1,
+                            transition:'border 0.15s, box-shadow 0.15s',
+                        }}
+                        onFocus={e => { e.target.style.border=`1.5px solid ${color}`; e.target.style.boxShadow=`0 0 0 3px ${color}22`; }}
+                        onBlur={e => { e.target.style.border='1.5px solid #e0e7ef'; e.target.style.boxShadow='none'; }}
+                    />
+                </div>
+            );
+        });
+
+        function Btn({ children, onClick, color, full }) {
+            return (
+                <button onClick={onClick} style={{
+                    width: full ? '100%' : 'auto', border:'none', cursor:'pointer',
+                    background:`linear-gradient(135deg,${color},${color}cc)`,
+                    color:'#fff', borderRadius:14, padding:'14px 20px',
+                    fontWeight:800, fontSize:14, letterSpacing:0.3,
+                    boxShadow:`0 4px 14px ${color}44`, transition:'all 0.18s',
+                    display:'block',
+                }}>
+                    {children}
+                </button>
+            );
+        }
+
+        function WrongList({ items, color }) {
+            if (!items || items.length === 0) return null;
+            const c = color === 'red' ? '#dc2626' : '#6366f1';
+            const bg = color === 'red' ? 'rgba(254,226,226,0.6)' : 'rgba(238,242,255,0.6)';
+            return (
+                <div style={{background:bg, backdropFilter:'blur(8px)', border:`1px solid ${c}22`, borderRadius:20, padding:'14px 16px', marginTop:4}}>
+                    <p style={{fontSize:11,fontWeight:800,color:c,letterSpacing:2,textTransform:'uppercase',marginBottom:10}}>
+                        ❌ Kosakata Lemah ({items.length})
+                    </p>
+                    <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:220,overflowY:'auto'}}>
+                        {items.map((item,i) => (
+                            <div key={i} style={{
+                                display:'flex', justifyContent:'space-between', alignItems:'center',
+                                background:'rgba(255,255,255,0.75)', backdropFilter:'blur(6px)',
+                                border:'1px solid rgba(255,255,255,0.9)', borderRadius:12, padding:'10px 12px',
+                            }}>
+                                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                    <span style={{fontSize:22,fontWeight:900,color:'#1e1b4b'}}>{item.hanzi}</span>
+                                    <span style={{fontSize:11,fontFamily:'monospace',fontWeight:700,color:'#818cf8',background:'#eef2ff',border:'1px solid #e0e7ff',borderRadius:6,padding:'2px 7px'}}>{item.pinyin}</span>
+                                </div>
+                                <span style={{fontSize:12,fontWeight:700,color:'#64748b'}}>{item.meaning}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function FinishScreen({ score, label, color, extra, wrongList, onRetry }) {
+            const emoji = score >= 80 ? '🏆' : score >= 60 ? '🎯' : '📚';
+            return (
+                <div>
+                    <Card>
+                        <div style={{textAlign:'center',padding:'16px 0'}}>
+                            <div style={{fontSize:52,marginBottom:8}}>{emoji}</div>
+                            <h2 style={{fontSize:22,fontWeight:900,color:'#1e1b4b',margin:'0 0 4px'}}>{label} Selesai!</h2>
+                            <p style={{color:'#94a3b8',fontSize:12,marginBottom:20}}>Hasil akhir kamu</p>
+                            <div style={{
+                                background:`linear-gradient(135deg,${color}11,${color}08)`,
+                                border:`1px solid ${color}22`, borderRadius:20,
+                                padding:'20px 16px', marginBottom:16,
+                            }}>
+                                <p style={{fontSize:10,fontWeight:800,color,letterSpacing:2,textTransform:'uppercase',margin:'0 0 4px'}}>Skor Akhir</p>
+                                <div style={{fontSize:60,fontWeight:900,color,lineHeight:1}}>
+                                    {score}<span style={{fontSize:20,color:`${color}88`,fontWeight:700}}>/100</span>
+                                </div>
+                                {extra && <p style={{fontSize:12,color:'#94a3b8',marginTop:6,fontWeight:600}}>{extra}</p>}
+                            </div>
+                            <Btn color={color} onClick={onRetry} full>Ulangi Sesi Ini</Btn>
+                        </div>
+                    </Card>
+                    <WrongList items={wrongList} />
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
