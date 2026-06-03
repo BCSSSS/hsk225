@@ -66,17 +66,17 @@
         const { useState, useEffect, useRef, useCallback } = React;
 
         // ══════════════════════════════════════════
-        //   DATA NO. 151–225 (BERSIH DARI SIMBOL)
+        //   DATA NO. 151–225
         // ══════════════════════════════════════════
         const WORDS_151_225 = [
             ['牛奶','niú nǎi','susu'],
             ['女','nǚ','perempuan'],
             ['女儿','nǚ ér','anak pr'],
-            ['女朋友','nǚ péng you','Pacar cowok'],
+            ['女朋友','nǚ péng you ♀','Pacar cowok'],
             ['女士','nǚ shì','wanita lebih tua'],
-            ['朋友','péng you','teman'],
-            ['便宜','pián yi','murah'],
-            ['漂亮','piào liang','cantik'],
+            ['朋友','péng you · s','teman'],
+            ['便宜','pián yí · z','murah'],
+            ['漂亮','piào liang · 4','cantik'],
             ['苹果','píng guǒ','apel'],
             ['七','qī','tujuh'],
             ['起床','qǐ chuáng','bangun (tidur)'],
@@ -89,7 +89,7 @@
             ['去年','qù nián','Tahun lalu'],
             ['热','rè','panas'],
             ['人','rén','orang'],
-            ['认识','rèn shi','kenal'],
+            ['认识','rèn shi · 4','kenal'],
             ['日','rì','hari'],
             ['三','sān','tiga'],
             ['商店','shāng diàn','toko'],
@@ -103,7 +103,7 @@
             ['什么','shén me','apa'],
             ['生病','shēng bìng','sakit'],
             ['十','shí','sepuluh'],
-            ['时候','shí hou','pada waktu'],
+            ['时候','shí hou · 4','pada waktu'],
             ['时间','shí jiān','waktu'],
             ['事','shì','masalah'],
             ['是','shì','adalah'],
@@ -121,29 +121,58 @@
             ['他','tā','dia (lk)'],
             ['它','tā','dia (benda,hewan)'],
             ['她','tā','dia (pr)'],
-            ['他们','tā men','mereka (lk)'],
-            ['它们','tā men','mereka (it)'],
-            ['她们','tā men','mereka (pr)'],
+            ['他们','tā men ~ 2','mereka (lk)'],
+            ['它们','tā men ~ 2','mereka (it)'],
+            ['她们','tā men ~ 2','mereka (pr)'],
             ['太','tài','terlalu'],
             ['天','tiān','langit'],
             ['天气','tiān qì','cuaca'],
             ['听','tīng','dengar'],
-            ['听见','tīng jiàn','terdengar'],
+            ['听见','tīng jiān','terdengar'],
             ['同学','tóng xué','murid'],
             ['外','wài','luar'],
             ['外边','wài biān','samping luar'],
             ['玩','wán','bermain'],
             ['晚','wǎn','malam.Telat - smp'],
             ['晚饭','wǎn fàn','makan malam'],
-            ['晚上','wǎn shang','malam hari'],
+            ['晚上','wǎn shang·','malam hari'],
             ['喂','wèi','hallo..'],
             ['问','wèn','tanya'],
             ['问题','wèn tí','pertanyaan.'],
             ['我','wǒ','saya'],
-            ['我们','wǒ men','kita'],
+            ['我们','wǒ men · 4','kita'],
             ['五','wǔ','lima'],
             ['午饭','wǔ fàn','makan siang'],
             ['喜欢','xǐ huan','suka'],
+        ];
+
+        // ══════════════════════════════════════════
+        //   DATA NAMA (繁体 — Tradisional)
+        // ══════════════════════════════════════════
+        const WORDS_NAMES = [
+            ['蔡順安','Cài shùn ān','BILLY'],
+            ['何珍珍','Hé zhēn zhēn','CRISTALIA YOSABELL'],
+            ['陳安安','Chén ān ān','CRISTIAN'],
+            ['陳水珍','Chén shuǐ zhēn','DEVINA'],
+            ['潘福士','Pān fú tǔ','DHARMAWAN'],
+            ['賴觀花','Lài guān huā','FALENSIA'],
+            ['劉欣霞','Liú xīn xiá','FEMI SEPTIANI'],
+            ['吳火軍','Wú huǒ jūn','FENKI WIJAYA'],
+            ['陳水蓮','Chén shuǐ lián','GABREL DENDA .A'],
+            ['朱安龍','Zhū ān lóng','GIO ARMANDO ABEL'],
+            ['胡梅蘭','Hú méi lán','HARIANA'],
+            ['歐利倫','Ōu lì lún','LEONARDO DEVIO'],
+            ['唐沅沐','Táng yuán mù','MARFEL'],
+            ['黃靜帆','Huáng jìng fān','MICHAEL VAN'],
+            ['李寶蘭','Lǐ bǎo lán','MICHELLE CORNELIA'],
+            ['張木新','Zhāng mù xīn','RIKHY SAPUTRA'],
+            ['林金珠','Lín jīn zhū','ROS DIANA'],
+            ['黃翠山','Huáng cuì shān','SANDY'],
+            ['曾穆立','Zēng mù lì','SHEREEN'],
+            ['曾麗嫦','Zēng lì cháng','VIRA MARCELLA'],
+            ['邱福梅','Qiū fú méi','VIVI VALENSIA'],
+            ['周飛孟','Zhōu fēi mèng','VIVIANS'],
+            ['余觀勇','Yú guān yǒng','WILLIAM'],
         ];
 
         const WORDS = [...WORDS_151_225];
@@ -309,6 +338,10 @@
             const [user, setUser] = useState(null);
             const [mode, setMode] = useState('flashcard');
             const [session, setSession] = useState(0);
+            const [dataset, setDataset] = useState('hsk');
+
+            const activeWords = dataset === 'names' ? WORDS_NAMES : WORDS;
+            const datasetLabel = dataset === 'names' ? '👤 Nama Kelas · 繁体' : '📚 No. 151–225 · HSK';
 
             if (!user) return <LoginScreen onLogin={setUser} />;
 
@@ -316,7 +349,7 @@
                 <div style={{minHeight:'100vh', padding:'16px 12px 48px'}}>
                     <div style={{maxWidth:480,margin:'0 auto'}}>
                         {/* ── HEADER ── */}
-                        <div style={{textAlign:'center',marginBottom:24}}>
+                        <div style={{textAlign:'center',marginBottom:16}}>
                             <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.6)',backdropFilter:'blur(12px)',border:'1px solid rgba(99,102,241,0.15)',borderRadius:999,padding:'6px 18px',marginBottom:12}}>
                                 <span style={{fontSize:18}}>🈶</span>
                                 <span style={{fontSize:12,fontWeight:800,letterSpacing:2,color:'#6366f1',textTransform:'uppercase'}}>HSK Survival</span>
@@ -325,7 +358,27 @@
                                 <button onClick={() => setUser(null)} style={{fontSize:10,color:'#94a3b8',background:'none',border:'none',cursor:'pointer',fontWeight:600,padding:'2px 4px'}}>✕</button>
                             </div>
                             <h1 style={{fontSize:28,fontWeight:900,color:'#1e1b4b',margin:0,lineHeight:1.1}}>Quiz & Flashcard</h1>
-                            <p style={{fontSize:13,color:'#818cf8',fontWeight:600,margin:'4px 0 0'}}>No. 151 – 225 · Mandarin × Indonesia</p>
+                            <p style={{fontSize:13,color:'#818cf8',fontWeight:600,margin:'4px 0 0'}}>Mandarin × Indonesia</p>
+                        </div>
+
+                        {/* ── DATASET SELECTOR ── */}
+                        <div style={{display:'flex',gap:6,background:'rgba(255,255,255,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.8)',borderRadius:16,padding:5,marginBottom:10,boxShadow:'0 2px 12px rgba(99,102,241,0.07)'}}>
+                            {[
+                                ['hsk','📚','HSK 151–225','#6366f1'],
+                                ['names','👤','Nama Kelas','#0ea5e9'],
+                            ].map(([ds, icon, label, color]) => (
+                                <button key={ds} onClick={() => setDataset(ds)} style={{
+                                    flex:1, padding:'9px 4px', border:'none', cursor:'pointer',
+                                    borderRadius:11, fontWeight:800, fontSize:11, transition:'all 0.2s',
+                                    background: dataset===ds ? color : 'transparent',
+                                    color: dataset===ds ? '#fff' : '#64748b',
+                                    boxShadow: dataset===ds ? `0 3px 10px ${color}44` : 'none',
+                                    display:'flex', flexDirection:'column', alignItems:'center', gap:2,
+                                }}>
+                                    <span style={{fontSize:15}}>{icon}</span>
+                                    {label}
+                                </button>
+                            ))}
                         </div>
 
                         {/* ── TAB ── */}
@@ -351,10 +404,10 @@
                         </div>
 
                         {/* ── KONTEN ── */}
-                        {mode === 'flashcard' && <Flashcard session={session} setSession={setSession} />}
-                        {mode === 'quiz' && <QuizMode user={user} />}
-                        {mode === 'hardcore' && <HardcoreMode user={user} />}
-                        {mode === 'blind' && <BlindRecallMode user={user} />}
+                        {mode === 'flashcard' && <Flashcard key={dataset} session={session} setSession={setSession} wordList={activeWords} isNamesMode={dataset==='names'} />}
+                        {mode === 'quiz' && <QuizMode key={dataset} user={user} wordList={activeWords} datasetLabel={datasetLabel} />}
+                        {mode === 'hardcore' && <HardcoreMode key={dataset} user={user} wordList={activeWords} />}
+                        {mode === 'blind' && <BlindRecallMode key={dataset} user={user} wordList={activeWords} />}
                     </div>
                 </div>
             );
@@ -363,16 +416,17 @@
         // ══════════════════════════════════════════
         //   FLASHCARD
         // ══════════════════════════════════════════
-        function Flashcard({ session, setSession }) {
+        function Flashcard({ session, setSession, wordList, isNamesMode }) {
             const [isShuffled, setIsShuffled] = useState(false);
             const [shuffledList, setShuffledList] = useState([]);
 
             const getBase = (s) => {
-                const third = Math.ceil(WORDS.length / 3);
-                if (s === 0) return WORDS;
-                if (s === 1) return WORDS.slice(0, third);
-                if (s === 2) return WORDS.slice(third, third * 2);
-                return WORDS.slice(third * 2);
+                const W = wordList || WORDS;
+                if (isNamesMode || s === 0) return W;
+                const third = Math.ceil(W.length / 3);
+                if (s === 1) return W.slice(0, third);
+                if (s === 2) return W.slice(third, third * 2);
+                return W.slice(third * 2);
             };
 
             const list = isShuffled ? shuffledList : getBase(session);
@@ -383,7 +437,7 @@
             useEffect(() => { setIdx(0); setFlipped(false); setDone(false); }, [session, isShuffled]);
 
             const toggleShuffle = () => {
-                const newShuffled = shuffle([...getBase(session)]);
+                const newShuffled = shuffle([...getBase(isNamesMode ? 0 : session)]);
                 setShuffledList(newShuffled);
                 setIsShuffled(p => !p);
             };
@@ -419,6 +473,7 @@
                             🔀 {isShuffled ? 'Diacak' : 'Urut'}
                         </button>
                     </div>
+                    {!isNamesMode && (
                     <div style={{display:'flex',gap:5,background:'rgba(255,255,255,0.5)',border:'1px solid rgba(99,102,241,0.12)',borderRadius:14,padding:5}}>
                         {[['Semua',0],['Sesi 1',1],['Sesi 2',2],['Sesi 3',3]].map(([l,s]) => (
                             <button key={s} onClick={() => setSession(s)} style={{
@@ -431,6 +486,7 @@
                             }}>{l}</button>
                         ))}
                     </div>
+                    )}
                 </div>
 
                 <Card>
@@ -455,8 +511,8 @@
                                 display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
                                 boxShadow:'0 4px 24px rgba(99,102,241,0.08)',
                             }}>
-                                <div style={{fontSize:72,fontWeight:900,color:'#1e1b4b',lineHeight:1,marginBottom:12}}>{cur[0]}</div>
-                                <div style={{fontSize:11,fontWeight:700,color:'#c7d2fe',letterSpacing:2,textTransform:'uppercase'}}>TAP UNTUK MELIHAT ARTI</div>
+                                <div style={{fontSize: isNamesMode ? 22 : 72,fontWeight:900,color:'#1e1b4b',lineHeight:1.2,marginBottom:12,textAlign:'center'}}>{isNamesMode ? cur[2] : cur[0]}</div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#c7d2fe',letterSpacing:2,textTransform:'uppercase'}}>{isNamesMode ? 'TAP UNTUK LIHAT HANZI' : 'TAP UNTUK MELIHAT ARTI'}</div>
                             </div>
                             <div style={{
                                 position:'absolute', inset:0, backfaceVisibility:'hidden',
@@ -466,10 +522,10 @@
                                 boxShadow:'0 4px 24px rgba(99,102,241,0.25)',
                                 padding:24, textAlign:'center',
                             }}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#a5b4fc',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>PINYIN</div>
-                                <div style={{fontSize:28,fontWeight:900,color:'#fff',fontFamily:'monospace',marginBottom:16}}>{cur[1]}</div>
-                                <div style={{fontSize:11,fontWeight:700,color:'#a5b4fc',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>ARTI</div>
-                                <div style={{fontSize:22,fontWeight:800,color:'#a7f3d0'}}>{cur[2]}</div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#a5b4fc',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>{isNamesMode ? 'HANZI (繁体)' : 'PINYIN'}</div>
+                                <div style={{fontSize: isNamesMode ? 48 : 28,fontWeight:900,color:'#fff',fontFamily:'monospace',marginBottom:16,letterSpacing:2}}>{isNamesMode ? cur[0] : cur[1]}</div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#a5b4fc',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>{isNamesMode ? 'PINYIN' : 'ARTI'}</div>
+                                <div style={{fontSize:isNamesMode?16:22,fontWeight:800,color:'#a7f3d0'}}>{isNamesMode ? cur[1] : cur[2]}</div>
                             </div>
                         </div>
                     </div>
@@ -502,9 +558,9 @@
         // ══════════════════════════════════════════
         //   QUIZ MODE
         // ══════════════════════════════════════════
-        function QuizMode({ user }) {
+        function QuizMode({ user, wordList, datasetLabel }) {
             const [isShuffled, setIsShuffled] = useState(false);
-            const [list, setList] = useState(WORDS);
+            const [list, setList] = useState(wordList || WORDS);
             const [idx, setIdx] = useState(0);
             const [pinyin, setPinyin] = useState('');
             const [meaning, setMeaning] = useState('');
@@ -578,7 +634,8 @@
             };
 
             const toggleShuffle = () => {
-                const newList = !isShuffled ? shuffle([...WORDS]) : WORDS;
+                const W = wordList || WORDS;
+                const newList = !isShuffled ? shuffle([...W]) : W;
                 setList(newList);
                 setIsShuffled(p => !p);
                 setIdx(0); setPinyin(''); setMeaning(''); setScore(0);
@@ -599,7 +656,8 @@
 
             if (finished) return (
                 <FinishScreen score={finalScore} label="Quiz" color="#059669" extra={started ? `Waktu: ${fmtTime(timeUsed)}` : ''} wrongList={wrongList} onRetry={() => {
-                    const newList = isShuffled ? shuffle([...WORDS]) : WORDS;
+                    const W2 = wordList || WORDS;
+                    const newList = isShuffled ? shuffle([...W2]) : W2;
                     setList(newList);
                     setIdx(0); setPinyin(''); setMeaning(''); setScore(0);
                     setAnswered({}); setWrongList([]); setShowResult(false); setFinished(false);
@@ -686,7 +744,11 @@
         // ══════════════════════════════════════════
         //   HARDCORE MODE
         // ══════════════════════════════════════════
-        function HardcoreMode({ user }) {
+        const HC_BASE_TIME = 15;
+        const HC_BONUS_COMBO = 15;
+        const HC_BONUS_SECS = 5;
+
+        function HardcoreMode({ user, wordList }) {
             const [list, setList] = useState([]);
             const [idx, setIdx] = useState(0);
             const [pinyin, setPinyin] = useState('');
@@ -699,34 +761,61 @@
             const [wrongList, setWrongList] = useState([]);
             const [combo, setCombo] = useState(0);
             const [maxCombo, setMaxCombo] = useState(0);
-            const [timeLeft, setTimeLeft] = useState(8);
+            const [timeLeft, setTimeLeft] = useState(HC_BASE_TIME);
+            const [timerKey, setTimerKey] = useState(0); // key to force timer bar restart
+            const [bonusAnim, setBonusAnim] = useState(false);
             const inputRef = useRef(null);
+            const timeoutFiredRef = useRef(false);
 
             useEffect(() => {
-                setList(shuffle([...WORDS]));
+                setList(shuffle([...(wordList || WORDS)]));
             }, []);
 
+            // Single, clean timer – runs only when a question is active
             useEffect(() => {
                 if (finished || showResult || list.length === 0) return;
+                timeoutFiredRef.current = false;
                 if (timeLeft <= 0) {
-                    handleTimeout();
+                    if (!timeoutFiredRef.current) {
+                        timeoutFiredRef.current = true;
+                        handleTimeout();
+                    }
                     return;
                 }
-                const t = setInterval(() => setTimeLeft(p => p - 1), 1000);
+                const t = setInterval(() => setTimeLeft(p => {
+                    if (p <= 1) {
+                        clearInterval(t);
+                        return 0;
+                    }
+                    return p - 1;
+                }), 1000);
                 return () => clearInterval(t);
-            }, [timeLeft, showResult, finished, list]);
+            }, [timerKey, showResult, finished, list.length]);
+
+            // Trigger timeout when timeLeft hits 0
+            useEffect(() => {
+                if (timeLeft === 0 && !showResult && !finished && list.length > 0) {
+                    if (!timeoutFiredRef.current) {
+                        timeoutFiredRef.current = true;
+                        handleTimeout();
+                    }
+                }
+            }, [timeLeft]);
 
             const cur = list[idx] || ['','',''];
 
             const handleTimeout = () => {
                 setFlash('wrong');
                 setTimeout(() => setFlash(null), 600);
-                setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], meaning: cur[2], info: 'Waktu Habis' }]);
+                const c = cur; // capture current before state update
+                setWrongList(p => [...p, { hanzi: c[0], pinyin: c[1], meaning: c[2], info: 'Waktu Habis ⏰' }]);
                 setCombo(0);
-                const nextLives = lives - 1;
-                setLives(nextLives);
+                setLives(prev => {
+                    const next = prev - 1;
+                    if (next <= 0) setFinished(true);
+                    return next;
+                });
                 setShowResult(true);
-                if (nextLives <= 0) setFinished(true);
             };
 
             const checkAnswer = () => {
@@ -749,6 +838,12 @@
                     const newCombo = combo + 1;
                     setCombo(newCombo);
                     if (newCombo > maxCombo) setMaxCombo(newCombo);
+                    // Bonus waktu setiap kelipatan HC_BONUS_COMBO
+                    if (newCombo % HC_BONUS_COMBO === 0) {
+                        setBonusAnim(true);
+                        setTimeout(() => setBonusAnim(false), 1500);
+                        setTimeLeft(p => Math.min(p + HC_BONUS_SECS, HC_BASE_TIME + HC_BONUS_SECS));
+                    }
                 } else {
                     setWrongList(p => [...p, { hanzi: cur[0], pinyin: cur[1], meaning: cur[2] }]);
                     setCombo(0);
@@ -763,12 +858,19 @@
             };
 
             const nextQ = () => {
-                setShowResult(false); setPinyin(''); setMeaning(''); setTimeLeft(8);
-                if (idx + 1 >= list.length) setFinished(true);
-                else {
-                    setIdx(p => p + 1);
-                    setTimeout(() => inputRef.current?.focus(), 50);
+                timeoutFiredRef.current = false;
+                const nextIdx = idx + 1;
+                if (nextIdx >= list.length) {
+                    setFinished(true);
+                    return;
                 }
+                setShowResult(false);
+                setPinyin('');
+                setMeaning('');
+                setIdx(nextIdx);
+                setTimeLeft(HC_BASE_TIME);
+                setTimerKey(k => k + 1); // restart timer bar animation
+                setTimeout(() => inputRef.current?.focus(), 50);
             };
 
             const [submitted, setSubmitted] = useState(false);
@@ -779,36 +881,87 @@
                 }
             }, [finished]);
 
+            // Timer bar width percentage
+            const timerPct = Math.max(0, (timeLeft / HC_BASE_TIME) * 100);
+            const timerDanger = timeLeft <= 4;
+
             if (finished) return (
                 <FinishScreen score={score} label="Hardcore" color="#dc2626" extra={`Max Combo: ${maxCombo}x`} wrongList={wrongList} onRetry={() => {
-                    setList(shuffle([...WORDS])); setIdx(0); setPinyin(''); setMeaning('');
+                    setList(shuffle([...(wordList || WORDS)])); setIdx(0); setPinyin(''); setMeaning('');
                     setLives(3); setScore(0); setShowResult(false); setFinished(false);
-                    setCombo(0); setMaxCombo(0); setTimeLeft(8); setSubmitted(false);
+                    setCombo(0); setMaxCombo(0); setTimeLeft(HC_BASE_TIME); setTimerKey(0); setSubmitted(false);
                 }} />
             );
 
             return (
                 <Card flash={flash} hardcore>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    {/* Bonus waktu notif */}
+                    {bonusAnim && (
+                        <div className="pop-in" style={{
+                            position:'absolute', top:12, left:'50%', transform:'translateX(-50%)',
+                            background:'linear-gradient(135deg,#fbbf24,#f59e0b)', color:'#fff',
+                            fontWeight:900, fontSize:13, borderRadius:99, padding:'6px 16px',
+                            zIndex:20, boxShadow:'0 4px 16px rgba(251,191,36,0.5)', whiteSpace:'nowrap',
+                        }}>
+                            🎉 Combo {HC_BONUS_COMBO}x! +{HC_BONUS_SECS} detik!
+                        </div>
+                    )}
+
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
                         <div style={{display:'flex',gap:4}}>
                             {Array.from({length:3}).map((_,i) => (
-                                <span key={i} style={{fontSize:16,filter: i<lives?'none':'grayscale(100%) opacity(0.3)',transition:'all 0.3s',display:'inline-block'}} className={i===lives-1&&timeLeft<=3?'blink':''}>❤️</span>
+                                <span key={i} style={{fontSize:16,filter: i<lives?'none':'grayscale(100%) opacity(0.3)',transition:'all 0.3s',display:'inline-block'}} className={i===lives-1&&timerDanger?'blink':''}>❤️</span>
                             ))}
+                        </div>
+                        <div style={{textAlign:'center'}}>
+                            <span style={{
+                                fontSize:22, fontWeight:900, fontFamily:'monospace',
+                                color: timerDanger ? '#fca5a5' : '#fff',
+                                display:'block', lineHeight:1,
+                            }} className={timerDanger ? 'blink' : ''}>
+                                {timeLeft}s
+                            </span>
+                            <span style={{fontSize:9,color:'rgba(255,255,255,0.5)',fontWeight:700,letterSpacing:1}}>SISA WAKTU</span>
                         </div>
                         <div style={{textAlign:'right'}}>
                             <span style={{fontSize:11,fontWeight:800,color:'#fca5a5',display:'block',letterSpacing:1}}>SKOR: {score}</span>
-                            {combo > 1 && <span style={{fontSize:10,fontWeight:900,color:'#f43f5e'}} className="heart-pop">{combo}x Combo! 🔥</span>}
+                            {combo > 1 && <span style={{fontSize:10,fontWeight:900,color:'#fbbf24'}} className="heart-pop">{combo}x 🔥{combo >= HC_BONUS_COMBO - 3 && combo % HC_BONUS_COMBO !== 0 ? ` → ${HC_BONUS_COMBO - (combo % HC_BONUS_COMBO)} lagi!` : ''}</span>}
                         </div>
                     </div>
 
-                    <div style={{height:6,background:'rgba(255,255,255,0.2)',borderRadius:99,marginBottom:20,overflow:'hidden',position:'relative'}}>
-                        {!showResult && (
-                            <div key={idx+'-'+timeLeft} className="timer-bar" style={{height:'100%',background:timeLeft<=3?'#ef4444':'#fff',animationDuration:`${timeLeft}s`}} />
-                        )}
+                    {/* Timer bar — CSS width transition, no animation bug */}
+                    <div style={{height:6,background:'rgba(255,255,255,0.15)',borderRadius:99,marginBottom:16,overflow:'hidden'}}>
+                        <div style={{
+                            height:'100%', borderRadius:99,
+                            background: timerDanger
+                                ? 'linear-gradient(90deg,#ef4444,#fca5a5)'
+                                : 'linear-gradient(90deg,#fff,rgba(255,255,255,0.7))',
+                            width: showResult ? '0%' : `${timerPct}%`,
+                            transition: showResult ? 'none' : 'width 1s linear',
+                            boxShadow: timerDanger ? '0 0 8px rgba(239,68,68,0.6)' : 'none',
+                        }} />
                     </div>
 
-                    <div style={{textAlign:'center',marginBottom:20}}>
-                        <div style={{fontSize:84,fontWeight:900,color:'#fff',lineHeight:1}}>{cur[0]}</div>
+                    {/* Bonus progress indicator */}
+                    {combo > 0 && (
+                        <div style={{marginBottom:10}}>
+                            <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                                <span style={{fontSize:9,color:'rgba(255,255,255,0.5)',fontWeight:700}}>BONUS WAKTU PROGRESS</span>
+                                <span style={{fontSize:9,color:'#fbbf24',fontWeight:800}}>{combo % HC_BONUS_COMBO}/{HC_BONUS_COMBO}</span>
+                            </div>
+                            <div style={{height:3,background:'rgba(255,255,255,0.1)',borderRadius:99,overflow:'hidden'}}>
+                                <div style={{
+                                    height:'100%', background:'linear-gradient(90deg,#fbbf24,#f59e0b)',
+                                    width:`${((combo % HC_BONUS_COMBO) / HC_BONUS_COMBO) * 100}%`,
+                                    transition:'width 0.3s ease', borderRadius:99,
+                                }} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{textAlign:'center',marginBottom:16,background:'rgba(255,255,255,0.12)',borderRadius:18,padding:'12px 8px'}}>
+                        <div style={{fontSize:78,fontWeight:900,color:'#fef9c3',lineHeight:1,textShadow:'0 2px 8px rgba(0,0,0,0.3)',letterSpacing:2}}>{cur[0]}</div>
+                        <span style={{fontSize:10,color:'rgba(255,255,255,0.6)',fontWeight:700}}>{idx+1}/{list.length}</span>
                     </div>
 
                     <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:20}}>
@@ -832,7 +985,7 @@
         // ══════════════════════════════════════════
         //   BLIND RECALL MODE
         // ══════════════════════════════════════════
-        function BlindRecallMode({ user }) {
+        function BlindRecallMode({ user, wordList }) {
             const [list, setList] = useState([]);
             const [idx, setIdx] = useState(0);
             const [pinyin, setPinyin] = useState('');
@@ -907,7 +1060,7 @@
 
             if (finished) return (
                 <FinishScreen score={finalScore} label="Blind" color="#d97706" extra={`Waktu: ${fmtTime(timer)}`} wrongList={wrongList} onRetry={() => {
-                    setList(shuffle([...WORDS])); setIdx(0); setPinyin(''); setMeaning('');
+                    setList(shuffle([...(wordList || WORDS)])); setIdx(0); setPinyin(''); setMeaning('');
                     setScore(0); setShowResult(false); setFinished(false); setTimer(0); setStarted(false); setSubmitted(false);
                 }} />
             );
@@ -919,10 +1072,13 @@
                         <span style={{fontSize:13,fontWeight:900,fontFamily:'monospace',color:'#fff'}}>⏱️ {fmtTime(timer)}</span>
                     </div>
 
-                    <div style={{textAlign:'center',marginBottom:24,padding:'20px 0'}}>
-                        <div style={{fontSize:11,fontWeight:700,color:'#fef3c7',letterSpacing:3,marginBottom:6}}>SUARA / PINYIN HANYA DI INGATAN</div>
-                        <div style={{fontSize:56,fontWeight:900,color:'#fff',lineHeight:1}}>🔒 KARTU Ke-{idx+1}</div>
-                        <p style={{fontSize:12,color:'#fef3c7',marginTop:6,opacity:0.8}}>Tebak kata acak berikutnya berdasarkan urutan ingatan HSK Anda</p>
+                    <div style={{textAlign:'center',marginBottom:24,padding:'12px 0'}}> 
+                        <div style={{fontSize:11,fontWeight:700,color:'#fef3c7',letterSpacing:3,marginBottom:10}}>TEBAK PINYIN & ARTI</div>
+                        <div style={{fontSize:72,fontWeight:900,color:'#fef9c3',lineHeight:1,textShadow:'0 2px 10px rgba(0,0,0,0.25)',letterSpacing:2,marginBottom:8}}>{cur[0]}</div>
+                        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(0,0,0,0.2)',borderRadius:99,padding:'4px 14px'}}>
+                            <span style={{fontSize:16}}>🔒</span>
+                            <span style={{fontSize:11,fontWeight:700,color:'#fef3c7'}}>Pinyin & arti tersembunyi</span>
+                        </div>
                     </div>
 
                     <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:20}}>
