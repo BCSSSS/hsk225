@@ -189,24 +189,31 @@
             'Authorization': `Bearer ${SUPABASE_KEY}`
         };
 
-        // Modifikasi: Ditambahkan limit=5 dan diurutkan langsung dari database Supabase agar lebih hemat bandwidth
         async function fetchLeaderboard() {
             try {
-                const r = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=*&order=score.desc,time_used.asc&limit=5`, {
-                    headers: SB_HEADERS
-                });
-                return await r.json();
+                const modes = ['quiz','hardcore','blind'];
+                // score & time_used are text columns — fetch all then sort in JS
+                const results = await Promise.all(modes.map(mode =>
+                    fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=*&mode=eq.${mode}&limit=100`, {
+                        headers: SB_HEADERS
+                    }).then(r => r.json())
+                ));
+                return results.flat();
             } catch(e) { return []; }
         }
 
         async function submitScore(name, mode, score, timeUsed) {
+            const payload = { name, mode, score, time_used: timeUsed };
+            console.log('[submitScore] Sending:', payload);
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
                     method: 'POST',
-                    headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
-                    body: JSON.stringify({ name, mode, score, time_used: timeUsed })
+                    headers: { ...SB_HEADERS, 'Prefer': 'return=representation' },
+                    body: JSON.stringify(payload)
                 });
-            } catch(e) { console.error('Gagal save:', e); }
+                const result = await res.json();
+                console.log('[submitScore] Response:', res.status, result);
+            } catch(e) { console.error('[submitScore] Error:', e); }
         }
 
         const cvtMobile = (t) => t
@@ -235,7 +242,14 @@
             }, []);
 
             const getTop5 = (mode) => {
-                return leaderboard.filter(e => e.mode === mode);
+                return leaderboard
+                    .filter(e => e.mode === mode)
+                    .sort((a, b) => {
+                        const scoreDiff = Number(b.score) - Number(a.score);
+                        if (scoreDiff !== 0) return scoreDiff;
+                        return Number(a.time_used) - Number(b.time_used);
+                    })
+                    .slice(0, 5);
             };
 
             const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
@@ -273,6 +287,13 @@
                         )}
                     </div>
                 );
+            };
+
+            const [debugData, setDebugData] = useState(null);
+            const fetchDebug = async () => {
+                const r = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=*&order=created_at.desc&limit=30`, { headers: SB_HEADERS });
+                const d = await r.json();
+                setDebugData(d);
             };
 
             const handleSubmit = (e) => {
@@ -329,6 +350,20 @@
                         <LeaderTable mode="quiz" label="📝 Quiz" color="#059669" />
                         <LeaderTable mode="hardcore" label="💀 Hardcore" color="#dc2626" />
                         <LeaderTable mode="blind" label="🧠 Blind" color="#d97706" />
+
+                        {/* DEBUG */}
+                        <div style={{marginTop:12,padding:10,background:'rgba(0,0,0,0.04)',borderRadius:12}}>
+                            <button onClick={fetchDebug} style={{fontSize:11,fontWeight:700,color:'#6366f1',background:'none',border:'1px solid #6366f1',borderRadius:8,padding:'4px 12px',cursor:'pointer'}}>🔍 Lihat raw data Supabase</button>
+                            {debugData && (
+                                <div style={{marginTop:8,maxHeight:250,overflowY:'auto'}}>
+                                    {Array.isArray(debugData) ? debugData.length === 0 ? <p style={{fontSize:11,color:'#94a3b8'}}>Kosong</p> : debugData.map((e,i) => (
+                                        <div key={i} style={{fontSize:10,fontFamily:'monospace',padding:'3px 0',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>
+                                            <b>{e.name}</b> · {e.mode} · score:{e.score} · time:{e.time_used} · {(e.created_at||'').slice(0,19)}
+                                        </div>
+                                    )) : <pre style={{fontSize:9,overflow:'auto'}}>{JSON.stringify(debugData,null,2)}</pre>}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
@@ -643,16 +678,23 @@
                 setTimeLeft(timerMode); setStarted(false);
             };
 
-            const finalScore = Math.round((score / maxScore) * 100);
-            const timeUsed = timerMode - timeLeft;
             const [submitted, setSubmitted] = useState(false);
+            const finalScoreRef = useRef(0);
+            const timeUsedRef = useRef(0);
 
             useEffect(() => {
                 if (finished && user && !submitted) {
                     setSubmitted(true);
-                    submitScore(user, 'quiz', finalScore, timeUsed);
+                    const fs = Math.round((score / (list.length * 2)) * 100);
+                    const tu = timerMode - timeLeft;
+                    finalScoreRef.current = fs;
+                    timeUsedRef.current = tu;
+                    submitScore(user, 'quiz', fs, tu);
                 }
             }, [finished]);
+
+            const finalScore = finished ? finalScoreRef.current : Math.round((score / (list.length * 2)) * 100);
+            const timeUsed = finished ? timeUsedRef.current : timerMode - timeLeft;
 
             if (finished) return (
                 <FinishScreen score={finalScore} label="Quiz" color="#059669" extra={started ? `Waktu: ${fmtTime(timeUsed)}` : ''} wrongList={wrongList} onRetry={() => {
